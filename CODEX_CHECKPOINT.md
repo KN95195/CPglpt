@@ -8,7 +8,7 @@ V3.0 second-round remediation, D14 deployment and browser E2E regression.
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D15: Generated `六大知识中心整改验收报告.docx`; server LibreOffice rendered 12 pages, every page was visually inspected at 100%, final accessibility audit has zero high-severity findings, and the alt-text-only revision produced 12/12 pixel-identical final pages.
+V3-D15-FINAL: Final formal-state recheck passed after all report-transfer cleanup: seed counts remain 15/3/10/15/5/6 with 6 BOMs, 74 relations and zero dirty records; API 4.2, Dify, Moodle DB and Moodle are healthy; temporary report/checkpoint document records are zero.
 
 # CURRENT STEP
 READY FOR PRODUCT/UI REVIEW.
@@ -87,6 +87,7 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D15-FINAL formal-state recheck passed after cleanup: API health ok on immutable `haizhi-hub-api:4.2`; Dify API, Moodle DB, and Moodle healthy; final semantic seed audit unchanged; no temporary report/checkpoint artifacts remain in application document data.
 - V3-D15 report acceptance passed: 12-page DOCX generated; LibreOffice server render succeeded; every rendered page was inspected with no clipping, overlap, broken tables, missing glyphs, or footer/header defects; final a11y audit has 0 high-severity findings and 12/12 final raster pages match the inspected render pixel-for-pixel.
 - V3-D14-14 browser console returned no entries; all six center list pages at the narrower 1280x720 live viewport reported `scrollWidth <= innerWidth` and no loading/error state. Responsive CSS breakpoints at 1450/1200/1050/1000/900/760/720/700/640/600 cover the required desktop matrices; six center screenshots are preserved under `artifacts/screenshots/`.
 - V3-D14-13 final local verification passed: Python compileall, `git diff --check`, and frontend production build with 1,443 transformed modules.
