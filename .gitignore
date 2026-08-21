@@ -1,0 +1,14 @@
+.env
+.runtime.env
+.acceptance.env
+.dify-admin
+__pycache__/
+*.py[cod]
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+*.tgz
+backups/
+.DS_Store
+Thumbs.db
