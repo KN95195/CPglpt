@@ -229,9 +229,11 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
 - Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
+- Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
-- Final report, builder, and this checkpoint are pending the final documentation commit at the time of this checkpoint write.
+- No uncommitted product, backend, migration, test, screenshot, report, or checkpoint code changes remain.
+- Local `artifacts/report-render/` contains untracked QA intermediates only and is intentionally excluded from delivery/commits.
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
