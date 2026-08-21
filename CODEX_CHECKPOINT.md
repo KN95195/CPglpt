@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D7 model-capability center completion.
+V3.0 second-round remediation, D8 scene center completion.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D6: Extended algorithms with unique code, type, current version, localized lifecycle status, input/output summaries, structured core metrics, and applicability boundaries; added full create/edit/detail form and rendering support. Frontend build, backend/migration compile, and diff checks passed.
+V3-D7: Extended model capabilities with unique code, version, category, function type, lifecycle status, structured metrics, input requirements, deployment requirements, and applicability boundaries; completed product-manager forms and read-only detail rendering. Frontend build, backend/migration compile, and diff checks passed.
 
 # CURRENT STEP
-V3-D7: Complete the model-capability center frozen fields and workflows.
+V3-D8: Complete the scene center frozen fields and workflows.
 
 # NEXT EXACT STEP
-Implement V3-D7 locally: extend model capabilities with unique code, model version, model category, function type, lifecycle status, structured metrics, input requirements, deployment requirements, recommended hardware, applicability and boundaries; expose list/detail/CRUD product-manager forms and localized read-only rendering; build/compile/check, update checkpoint, then continue to V3-D8 scene center.
+Implement V3-D8 locally: extend scenes with category, lifecycle status, cover image, structured business pain points, construction goals, business process, core model-capability summary, recommended products, and standard solution references; expose list/detail/CRUD product-manager forms and localized rendering; build/compile/check, update checkpoint, then continue to V3-D9 solution/BOM.
 
 # COMPLETED STEPS
+- V3-D7: Completed model-capability frozen metadata, metrics, input/deployment requirements, boundaries, localized CRUD/detail forms, and migration `c8e2f60b1354`.
 - V3-D6: Completed algorithm-center frozen metadata, structured metrics and boundaries, localized CRUD/detail forms, and migration `b7d1e5fa0243`.
 - V3-D5: Completed software-center frozen metadata, exact CRUD/detail rendering, product-manager form fields, and migration `a6c0d4e9f132`.
 - V3-D4: Completed the frozen product create and detail workflow, type-aware dynamic fields, main-image field, embedded PRICE_VIEW-safe price response, and migration `f5b9c3d8e021`.
@@ -80,6 +81,7 @@ Implement V3-D7 locally: extend model capabilities with unique code, model versi
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D7 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed.
 - V3-D6 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed.
 - V3-D5 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed; source checks verified all frozen software fields in model, API, form, and detail UI.
 - V3-D4 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed; source checks verified the new product schema fields and conditional PRICE_VIEW response branch.

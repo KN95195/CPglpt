@@ -34,8 +34,8 @@ async def security_headers(request:Request,call_next):
 class Login(BaseModel): username:str;password:str
 class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
 class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;data_status:str|None=None
-class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';input_summary:str='';output_summary:str='';metrics:dict[str,str]={};boundaries:list[str]=[];software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
-class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
+class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';function_type:str='识别';input_summary:str='';output_summary:str='';metrics:dict[str,str]={};input_requirements:dict[str,str]={};deployment_requirements:dict[str,str]={};boundaries:list[str]=[];software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
+class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;function_type:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;input_requirements:dict[str,str]|None=None;deployment_requirements:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
 class ProjectPatch(BaseModel): name:str|None=None;customer:str|None=None;region:str|None=None;scene_id:int|None=None;requirements_json:dict|None=None;bom_json:list|None=None
@@ -253,6 +253,7 @@ def catalog(kind:str,db:Session=Depends(session),u:User=Depends(user)):
    if hasattr(x,attr):row[key]=getattr(x,attr)
   if isinstance(x,Software):row['supportedOs']=json.loads(x.supported_os_json or '[]')
   if isinstance(x,Algorithm):row|={'inputSummary':x.input_summary,'outputSummary':x.output_summary,'metrics':json.loads(x.metrics_json or '{}'),'boundaries':json.loads(x.boundaries_json or '[]')}
+  if isinstance(x,Capability):row|={'functionType':x.function_type,'metrics':json.loads(x.metrics_json or '{}'),'inputRequirements':json.loads(x.input_requirements_json or '{}'),'deploymentRequirements':json.loads(x.deployment_requirements_json or '{}'),'boundaries':json.loads(x.boundaries_json or '[]')}
   if isinstance(x,Solution):row['scene']=x.scene.name
   rows.append(row)
  return rows
@@ -279,6 +280,7 @@ def center_detail(kind:str,rid:int,db:Session,u:User):
   if hasattr(rec,attr):result[key]=getattr(rec,attr)
  if isinstance(rec,Software):result['supportedOs']=json.loads(rec.supported_os_json or '[]')
  if isinstance(rec,Algorithm):result|={'inputSummary':rec.input_summary,'outputSummary':rec.output_summary,'metrics':json.loads(rec.metrics_json or '{}'),'boundaries':json.loads(rec.boundaries_json or '[]')}
+ if isinstance(rec,Capability):result|={'functionType':rec.function_type,'metrics':json.loads(rec.metrics_json or '{}'),'inputRequirements':json.loads(rec.input_requirements_json or '{}'),'deploymentRequirements':json.loads(rec.deployment_requirements_json or '{}'),'boundaries':json.loads(rec.boundaries_json or '[]')}
  if isinstance(rec,Scene):
   solutions=db.scalars(select(Solution).where(Solution.scene_id==rid).order_by(Solution.tier,Solution.name)).all()
   result['relations']=[{'id':x.id,'type':'solutions','name':x.name,'meta':x.tier,'summary':x.summary} for x in solutions]
@@ -314,8 +316,10 @@ def catalog_values(kind,x):
   else:d['summary']=summary
  if 'supported_os' in d:d['supported_os_json']=json.dumps(d.pop('supported_os'),ensure_ascii=False)
  if 'metrics' in d:d['metrics_json']=json.dumps(d.pop('metrics'),ensure_ascii=False)
+ if 'input_requirements' in d:d['input_requirements_json']=json.dumps(d.pop('input_requirements'),ensure_ascii=False)
+ if 'deployment_requirements' in d:d['deployment_requirements_json']=json.dumps(d.pop('deployment_requirements'),ensure_ascii=False)
  if 'boundaries' in d:d['boundaries_json']=json.dumps(d.pop('boundaries'),ensure_ascii=False)
- allowed={'model-capabilities':{'name','description','category','status'},'capabilities':{'name','description','category','status'},'algorithms':{'name','description','code','version','category','input_summary','output_summary','metrics_json','boundaries_json','status'},'software':{'name','description','code','software_type','vendor','version','deployment_mode','supported_os_json','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
+ allowed={'model-capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'algorithms':{'name','description','code','version','category','input_summary','output_summary','metrics_json','boundaries_json','status'},'software':{'name','description','code','software_type','vendor','version','deployment_mode','supported_os_json','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
  return {k:v for k,v in d.items() if k in allowed}
 @app.post('/api/admin/catalog/{kind}',status_code=201)
 def create_catalog(kind:str,x:CatalogIn,db:Session=Depends(session),u:User=Depends(user)):
