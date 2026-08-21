@@ -1,0 +1,46 @@
+<script setup lang="ts">
+import { ArrowLeft, Connection, Delete, Edit, Plus, Refresh } from '@element-plus/icons-vue'
+
+const props = withDefaults(defineProps<{
+  centerTitle: string
+  record: Record<string, any> | null
+  loading?: boolean
+  error?: string
+  canManage?: boolean
+  showPrice?: boolean
+}>(), { loading: false, error: '', canManage: false, showPrice: false })
+
+const emit = defineEmits<{ back: []; edit: []; delete: []; relate: []; retry: []; openRelation: [relation: any] }>()
+const statusLabel = (value?: string) => ({ SUPPORTED: '正式支持', ON_SALE: '在售', OFF_SALE: '停售', ACTIVE: '启用', PUBLISHED: '已发布', DRAFT: '草稿' } as Record<string, string>)[value || ''] || '正式支持'
+</script>
+
+<template>
+  <section class="detail-page" v-loading="loading">
+    <div class="detail-nav"><el-button link :icon="ArrowLeft" @click="emit('back')">返回{{ centerTitle }}</el-button></div>
+    <el-alert v-if="error" type="error" :title="error" :closable="false" show-icon><template #default><el-button :icon="Refresh" @click="emit('retry')">重新加载</el-button></template></el-alert>
+    <template v-else-if="record">
+      <header class="detail-hero-v3">
+        <div class="record-symbol">{{ record.name?.slice(0, 1) }}</div>
+        <div class="hero-copy"><div class="eyebrow">{{ centerTitle }} · 知识详情</div><h1>{{ record.name }}</h1><p>{{ record.summary || '暂无简介' }}</p><div class="hero-tags"><el-tag effect="plain">{{ statusLabel(record.status) }}</el-tag><el-tag v-if="record.modelCode" effect="plain">{{ record.modelCode }}</el-tag><el-tag v-if="record.version" effect="plain">版本 {{ record.version }}</el-tag><el-tag v-if="record.category" effect="plain">{{ record.category }}</el-tag></div></div>
+        <div v-if="canManage" class="hero-actions"><el-button :icon="Edit" @click="emit('edit')">编辑</el-button><el-button type="danger" plain :icon="Delete" @click="emit('delete')">删除</el-button></div>
+      </header>
+
+      <div class="detail-layout">
+        <main class="detail-main">
+          <section class="detail-section"><div class="section-head"><div><h2>基础信息</h2><p>当前知识条目的核心属性与维护状态。</p></div></div><el-descriptions :column="2" border><el-descriptions-item label="名称">{{ record.name }}</el-descriptions-item><el-descriptions-item label="状态">{{ statusLabel(record.status) }}</el-descriptions-item><el-descriptions-item v-if="record.modelCode" label="主型号">{{ record.modelCode }}</el-descriptions-item><el-descriptions-item v-if="record.version" label="版本">{{ record.version }}</el-descriptions-item><el-descriptions-item v-if="record.category" label="分类">{{ record.category }}</el-descriptions-item><el-descriptions-item v-if="record.scene" label="适用场景">{{ record.scene }}</el-descriptions-item><el-descriptions-item v-if="record.tier" label="方案等级">{{ record.tier }}</el-descriptions-item><el-descriptions-item label="最近更新">{{ record.updatedAt ? new Date(record.updatedAt).toLocaleString() : '-' }}</el-descriptions-item></el-descriptions></section>
+
+          <section v-if="record.painPoints" class="detail-section"><div class="section-head"><div><h2>业务痛点</h2><p>该场景重点解决的问题。</p></div></div><p class="long-copy">{{ record.painPoints }}</p></section>
+
+          <section class="detail-section"><div class="section-head"><div><h2>关联知识</h2><p>复用已有知识对象，支持双向追溯。</p></div><el-button v-if="canManage" :icon="Plus" @click="emit('relate')">选择关联</el-button></div><div v-if="record.relations?.length" class="relation-list"><button v-for="relation in record.relations" :key="relation.type + relation.id" type="button" @click="emit('openRelation', relation)"><span class="relation-icon"><el-icon><Connection /></el-icon></span><span><strong>{{ relation.name }}</strong><small>{{ relation.meta || relation.summary || '查看关联详情' }}</small></span></button></div><el-empty v-else description="暂无关联知识" :image-size="64" /></section>
+
+          <section v-if="showPrice" class="detail-section"><div class="section-head"><div><h2>价格信息</h2><p>价格随知识对象展示，并受价格查看权限保护。</p></div></div><slot name="price"><el-empty description="暂无价格信息" :image-size="64" /></slot></section>
+        </main>
+        <aside class="detail-aside"><h3>维护信息</h3><dl><div><dt>数据状态</dt><dd>已确认</dd></div><div><dt>维护角色</dt><dd>{{ canManage ? '产品经理' : '只读用户' }}</dd></div><div><dt>记录编号</dt><dd>#{{ record.id }}</dd></div></dl></aside>
+      </div>
+    </template>
+  </section>
+</template>
+
+<style scoped>
+.detail-page{display:grid;gap:14px}.detail-nav{height:28px;display:flex;align-items:center}.detail-hero-v3{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:start;padding:24px;background:#fff;border:1px solid #e2e9f2;border-radius:8px}.record-symbol{display:grid;place-items:center;width:68px;height:68px;border-radius:8px;background:#eaf3ff;color:#146ef5;font-size:28px;font-weight:700}.eyebrow{font-size:12px;color:#146ef5;font-weight:700}.hero-copy h1{margin:5px 0 7px;font-size:26px;letter-spacing:0;color:#14233c}.hero-copy p{max-width:760px;margin:0;color:#64748b;line-height:1.6}.hero-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}.hero-actions{display:flex;gap:8px}.detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px}.detail-main{display:grid;gap:16px}.detail-section,.detail-aside{padding:20px;background:#fff;border:1px solid #e2e9f2;border-radius:8px}.section-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.section-head h2,.detail-aside h3{margin:0;font-size:17px;letter-spacing:0;color:#192941}.section-head p{margin:5px 0 0;font-size:13px;color:#78869a}.long-copy{margin:0;line-height:1.8;color:#52637b}.relation-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.relation-list button{display:flex;align-items:center;gap:12px;min-width:0;padding:13px;text-align:left;background:#f8fafc;border:1px solid #e5ebf2;border-radius:7px;cursor:pointer}.relation-list button:hover{border-color:#8dbbff;background:#f3f8ff}.relation-list button span:last-child{display:grid;min-width:0}.relation-list strong,.relation-list small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.relation-list strong{font-size:14px;color:#1d2d45}.relation-list small{margin-top:3px;color:#7b899b}.relation-icon{display:grid;place-items:center;flex:0 0 34px;height:34px;background:#e9f3ff;color:#146ef5;border-radius:6px}.detail-aside{align-self:start}.detail-aside dl{margin:14px 0 0}.detail-aside dl div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid #edf1f5;font-size:13px}.detail-aside dt{color:#7b899b}.detail-aside dd{margin:0;color:#273950}@media(max-width:1000px){.detail-layout{grid-template-columns:1fr}.detail-aside{order:-1}.detail-aside dl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.detail-aside dl div{display:grid;gap:4px;border:0}}@media(max-width:700px){.detail-hero-v3{grid-template-columns:auto 1fr}.hero-actions{grid-column:1/-1}.relation-list{grid-template-columns:1fr}.detail-aside dl{grid-template-columns:1fr}.detail-section{padding:16px}}
+</style>

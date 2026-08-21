@@ -248,12 +248,50 @@ def catalog(kind:str,db:Session=Depends(session),u:User=Depends(user)):
   if isinstance(x,Solution):row['scene']=x.scene.name
   rows.append(row)
  return rows
+def center_rows(kind:str,db:Session,u:User):return catalog(kind,db,u)
+@app.get('/api/software')
+def software_center(db:Session=Depends(session),u:User=Depends(user)):return center_rows('software',db,u)
+@app.get('/api/algorithms')
+def algorithm_center(db:Session=Depends(session),u:User=Depends(user)):return center_rows('algorithms',db,u)
+@app.get('/api/model-capabilities')
+def model_capability_center(db:Session=Depends(session),u:User=Depends(user)):return center_rows('model-capabilities',db,u)
+@app.get('/api/scenes')
+def scene_center(db:Session=Depends(session),u:User=Depends(user)):return center_rows('scenes',db,u)
+@app.get('/api/solutions')
+def solution_center(db:Session=Depends(session),u:User=Depends(user)):return center_rows('solutions',db,u)
+
+def center_detail(kind:str,rid:int,db:Session,u:User):
+ if 'KNOWLEDGE_VIEW' not in permission_codes(u):raise HTTPException(403,'缺少权限：KNOWLEDGE_VIEW')
+ model={'software':Software,'algorithms':Algorithm,'model-capabilities':Capability,'scenes':Scene,'solutions':Solution}.get(kind)
+ if not model:raise HTTPException(404,'模块不存在')
+ rec=db.get(model,rid)
+ if not rec:raise HTTPException(404,'知识条目不存在')
+ result={'id':rec.id,'name':rec.name,'summary':getattr(rec,'summary',getattr(rec,'description','')),'status':getattr(rec,'status','SUPPORTED'),'updatedAt':rec.updated_at.isoformat(),'relations':[]}
+ for attr,key in [('version','version'),('category','category'),('tier','tier'),('pain_points','painPoints')]:
+  if hasattr(rec,attr):result[key]=getattr(rec,attr)
+ if isinstance(rec,Scene):
+  solutions=db.scalars(select(Solution).where(Solution.scene_id==rid).order_by(Solution.tier,Solution.name)).all()
+  result['relations']=[{'id':x.id,'type':'solutions','name':x.name,'meta':x.tier,'summary':x.summary} for x in solutions]
+ if isinstance(rec,Solution):
+  result['sceneId']=rec.scene_id;result['scene']=rec.scene.name
+  result['relations']=[{'id':rec.scene.id,'type':'scenes','name':rec.scene.name,'meta':'适用场景','summary':rec.scene.summary}]
+ return result
+
+@app.get('/api/software/{rid}')
+def software_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('software',rid,db,u)
+@app.get('/api/algorithms/{rid}')
+def algorithm_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('algorithms',rid,db,u)
+@app.get('/api/model-capabilities/{rid}')
+def model_capability_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('model-capabilities',rid,db,u)
+@app.get('/api/solutions/{rid}')
+def solution_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('solutions',rid,db,u)
 @app.get('/api/scenes/{sid}')
 def scene_detail(sid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  rec=db.get(Scene,sid)
  if not rec:raise HTTPException(404,'场景不存在')
  solutions=db.scalars(select(Solution).where(Solution.scene_id==sid).order_by(Solution.tier,Solution.name)).all()
- return {'id':rec.id,'name':rec.name,'summary':rec.summary,'painPoints':rec.pain_points,'status':rec.status,'solutions':[{'id':x.id,'name':x.name,'tier':x.tier,'summary':x.summary} for x in solutions]}
+ relation_rows=[{'id':x.id,'name':x.name,'tier':x.tier,'summary':x.summary} for x in solutions]
+ return {'id':rec.id,'name':rec.name,'summary':rec.summary,'painPoints':rec.pain_points,'status':rec.status,'updatedAt':rec.updated_at.isoformat(),'solutions':relation_rows,'relations':[{'id':x['id'],'type':'solutions','name':x['name'],'meta':x['tier'],'summary':x['summary']} for x in relation_rows]}
 def catalog_model(kind):
  meta={'model-capabilities':Capability,'capabilities':Capability,'algorithms':Algorithm,'software':Software,'scenes':Scene,'solutions':Solution}.get(kind)
  if not meta:raise HTTPException(404,'模块不存在')

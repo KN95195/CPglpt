@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D3 shared six-center detail framework.
+V3.0 second-round remediation, D4 product center full rebuild.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D2: Added the reusable `KnowledgeList` experience and connected all six center list routes to real APIs with responsive card/list modes, compact metrics, search/status filtering, loading, empty, error/retry, and management actions. Frontend production build passed.
+V3-D3: Added exact list/detail APIs for all five non-product centers and a shared responsive `KnowledgeDetail` shell covering hero metadata, relationship navigation, read-only/manage states, loading/error/retry, maintenance metadata, and permission-gated price sections. Frontend build and backend compile passed.
 
 # CURRENT STEP
-V3-D3: Build the shared six-center detail-page framework.
+V3-D4: Rebuild the product center against the frozen product fields and workflow.
 
 # NEXT EXACT STEP
-Implement V3-D3 locally: add real detail APIs for software, algorithms, model capabilities, scenes, and solutions; create one shared detail shell with hero, metadata, relationship sections, loading/error/read-only/manage states and responsive layout; connect all six detail routes; build/test, update checkpoint, then continue to V3-D4 full product-center rebuild.
+Implement V3-D4 locally: extend the product schema/API for frozen product type, main model, classification, one-line introduction, sales status, primary image, type-specific dynamic fields, embedded price and relationship sections; implement the six-field create modal that redirects into same-page detail editing; enforce read-only user versus product-manager behavior and PRICE_VIEW omission; add migration/tests, build, update checkpoint, then continue to V3-D5 software center.
 
 # COMPLETED STEPS
+- V3-D3: Added exact APIs and a shared responsive detail framework for all six center routes, including real relationship links and permission-aware management/price sections.
 - V3-D2: Connected all six centers to the shared enterprise list shell with card/list modes, filters, summary counts, responsive layouts, and complete loading/empty/error/permission states.
 - V3-D1: Added the frozen three-permission model, role migration `e4f8a2c7d910`, six-center navigation, 模型能力中心 API alias, and all twelve Vue Router routes; frontend build and backend compile passed.
 - V3-D0: Read the frozen V3.0 PRD in full, inspected all nine embedded UI references, created a clean baseline commit, and opened `feature/knowledge-centers-v3`; formal API 3.20 remained untouched.
@@ -76,6 +77,7 @@ Implement V3-D3 locally: add real detail APIs for software, algorithms, model ca
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D3 frontend `pnpm build` passed with 1,437 modules transformed; backend `python -m compileall app migrations` and `git diff --check` passed; all exact non-product center list/detail route declarations were verified.
 - V3-D2 frontend `pnpm build` passed with 1,434 modules transformed and production assets emitted.
 - V3-D1 frontend `pnpm build` passed with 1,430 modules transformed; backend `python -m compileall app migrations` passed; `git diff --check` passed.
 - `GET /api/health` returned `{"status":"ok","version":"1.0.0","runtime":"fastapi-postgresql"}` before the API recreation.
