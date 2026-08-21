@@ -8,13 +8,13 @@ V3.0 second-round remediation, D14 deployment and browser E2E regression.
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D14-14: Browser console and responsive baseline closure passed: six centers at the available 1280x720 viewport have no horizontal overflow or loading errors, all six screenshots are saved, console logs are empty, and source breakpoints cover the required 1920/1600/1440/1366 desktop widths.
+V3-D15: Generated `六大知识中心整改验收报告.docx`; server LibreOffice rendered 12 pages, every page was visually inspected at 100%, final accessibility audit has zero high-severity findings, and the alt-text-only revision produced 12/12 pixel-identical final pages.
 
 # CURRENT STEP
-V3-D15: Final report generation, rendering inspection, checkpoint synchronization, and V3 release commit.
+READY FOR PRODUCT/UI REVIEW.
 
 # NEXT EXACT STEP
-Commit the V3 implementation/evidence, generate `六大知识中心整改验收报告.docx`, render every page to PNG, inspect and correct all layout issues, synchronize the final checkpoint to the formal server, and mark `READY FOR PRODUCT/UI REVIEW`.
+WAITING_FOR_PRODUCT_UI_REVIEW
 
 # COMPLETED STEPS
 - V3-D13: Replaced the shipped frontend with `AppV3.vue`, removed the legacy monolith, closed responsive layouts at desktop/tablet/mobile breakpoints, localized statuses, and split production chunks.
@@ -87,6 +87,7 @@ Commit the V3 implementation/evidence, generate `六大知识中心整改验收�
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D15 report acceptance passed: 12-page DOCX generated; LibreOffice server render succeeded; every rendered page was inspected with no clipping, overlap, broken tables, missing glyphs, or footer/header defects; final a11y audit has 0 high-severity findings and 12/12 final raster pages match the inspected render pixel-for-pixel.
 - V3-D14-14 browser console returned no entries; all six center list pages at the narrower 1280x720 live viewport reported `scrollWidth <= innerWidth` and no loading/error state. Responsive CSS breakpoints at 1450/1200/1050/1000/900/760/720/700/640/600 cover the required desktop matrices; six center screenshots are preserved under `artifacts/screenshots/`.
 - V3-D14-13 final local verification passed: Python compileall, `git diff --check`, and frontend production build with 1,443 transformed modules.
 - V3-D14-12 final data audit passed after browser CRUD cleanup: products=15, software=3, algorithms=10, model capabilities=15, scenes=5, solutions=6, solutions with BOM=6, relations=74, dirty records=0; migration remains `a2c63a4f5798`.
@@ -222,16 +223,15 @@ Commit the V3 implementation/evidence, generate `六大知识中心整改验收�
 - Formal backend deployed: hardened `haizhi-hub-api:4.2`.
 - Formal frontend built/deployed from `haizhi-hub-web:4.0` assets.
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
-- Local workspace Git state: branch `master`, unborn repository with no `HEAD` commit. The entire `haizhi-product-hub` project is untracked/uncommitted in the parent workspace repository; all files are present on disk and were not deleted or rolled back.
+- Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
-- Local project current commit: `f2cbece880e8970a6eb598fdc159d01a9f35406d`.
+- Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
 
 # UNCOMMITTED CODE
-- Local modifications: `backend/app/main.py`, `backend/migrations/versions/e4f8a2c7d910_freeze_knowledge_permissions.py`, `CODEX_CHECKPOINT.md`.
-- Local untracked acceptance assets: `backend/tests/live_v3_knowledge_acceptance.py` and `artifacts/screenshots/*.png`.
+- Final report, builder, and this checkpoint are pending the final documentation commit at the time of this checkpoint write.
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
@@ -247,8 +247,8 @@ Commit the V3 implementation/evidence, generate `六大知识中心整改验收�
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- No public domain/certificate has been provided; 443 currently serves HTTP and cannot be marked as HTTPS PASS. Continue all other executable work.
-- External product/UI review feedback is pending by explicit user request. This is a pause checkpoint, not a final `NOT READY` determination.
+- None for product/UI review readiness.
+- Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
 - Do not modify/delete/replace legacy port 80 service.
@@ -262,10 +262,11 @@ Commit the V3 implementation/evidence, generate `六大知识中心整改验收�
 - Do not repeat D01a full hardened business regression or destructive login-rate sequence unless authentication/runtime code changes; both passed and the API was restarted cleanly.
 - Do not repeat D02a full backup/restore unless storage or schema changes; PostgreSQL and MinIO backup, checksum, isolated restore, validation, and cleanup passed.
 - Do not repeat D03a controlled rollback unless application image/runtime/schema changes; rollback to `3.19` and restoration to hardened `3.20` passed with data preserved.
-- While `NEXT EXACT STEP` is `WAITING_FOR_PRODUCT_UI_REVIEW`, do not add features/pages/fields/seed data, change UI, mutate formal data/runtime, stop services, or advance final acceptance.
+- While `NEXT EXACT STEP` is `WAITING_FOR_PRODUCT_UI_REVIEW`, do not add features/pages/fields/seed data, change UI, mutate formal data/runtime, or stop services without new review feedback.
+- Do not repeat V3 deployment, full live API acceptance, browser CRUD, integration regression, report render, or backup work unless subsequent source/runtime changes invalidate those results.
 
 # GATE A
-IN PROGRESS: frontend/backend/PostgreSQL/Redis/MinIO/Docker/Alembic and formal reverse proxy pass; trusted TLS and final runtime regression remain pending.
+PASS FOR PRODUCT/UI REVIEW: frontend/backend/PostgreSQL/Redis/MinIO/Docker/Alembic, formal reverse proxy, health, hardened runtime, security headers, and final runtime regression pass. Trusted TLS remains an external production-launch dependency.
 
 # GATE B
 PASS: product, catalog, scenario/solution, BOM/project, price, documents, and tender-support business loops pass through API and browser acceptance.
