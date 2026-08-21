@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/router.ts","./src/app.vue","./src/components/knowledgedetail.vue","./src/components/knowledgelist.vue","./src/components/productdetail.vue","./src/components/relationdrawer.vue"],"version":"5.7.2"}
+{"root":["./src/main.ts","./src/router.ts","./src/appv3.vue","./src/components/knowledgedetail.vue","./src/components/knowledgelist.vue","./src/components/productdetail.vue","./src/components/relationdrawer.vue"],"version":"5.7.2"}

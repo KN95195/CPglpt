@@ -55,7 +55,7 @@ const supportedCount = computed(() => props.rows.filter((row) => !row.status || 
 watch(() => props.title, () => { keyword.value = ''; status.value = '全部状态' })
 
 function statusLabel(value?: string) {
-  return ({ SUPPORTED: '正式支持', ON_SALE: '在售', OFF_SALE: '停售', ACTIVE: '启用', PUBLISHED: '已发布', DRAFT: '草稿' } as Record<string, string>)[value || ''] || '正式支持'
+  return ({ SUPPORTED: '正式支持', ON_SALE: '在售', OFF_SALE: '停售', ACTIVE: '启用', PUBLISHED: '已发布', DRAFT: '草稿', BETA: 'Beta', DISABLED: '停用', PLANNING: '规划中' } as Record<string, string>)[value || ''] || '状态待确认'
 }
 </script>
 

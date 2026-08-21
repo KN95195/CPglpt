@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
 }>(), { loading: false, error: '', canManage: false, showPrice: false })
 
 const emit = defineEmits<{ back: []; edit: []; delete: []; relate: []; editBom: []; retry: []; openRelation: [relation: any] }>()
-const statusLabel = (value?: string) => ({ SUPPORTED: '正式支持', ON_SALE: '在售', OFF_SALE: '停售', ACTIVE: '启用', PUBLISHED: '已发布', DRAFT: '草稿' } as Record<string, string>)[value || ''] || '正式支持'
+const statusLabel = (value?: string) => ({ SUPPORTED: '正式支持', ON_SALE: '在售', OFF_SALE: '停售', ACTIVE: '启用', PUBLISHED: '已发布', DRAFT: '草稿', BETA: 'Beta', DISABLED: '停用', PLANNING: '规划中' } as Record<string, string>)[value || ''] || '状态待确认'
 const metaLabel = (relation:any) => typeof relation.meta === 'string' ? relation.meta : Object.values(relation.meta || {}).filter(Boolean).join(' · ') || relation.summary || '查看关联详情'
 </script>
 

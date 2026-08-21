@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D13 UI polish and responsive closure.
+V3.0 second-round remediation, D14 deployment and browser E2E regression.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D12: Added exact product price GET/PATCH APIs and frozen tax/validity/notes fields; product and solution/BOM detail payloads omit all price keys without PRICE_VIEW; added in-context product price editing and removed the independent price page from the V3 frontend. Frontend build, backend/migration/test compile, and diff checks passed. The executable SQLite security test is staged for server execution because the Windows workspace Python runtime lacks SQLAlchemy.
+V3-D13: Replaced the legacy workbench monolith with a six-center-only V3 application shell; removed all legacy menu/pages/permission references from the production bundle; aligned light enterprise navigation, content density, forms, localized statuses, interaction feedback, and responsive behavior; split application/Vue/Element chunks. Production build and static UI audits passed.
 
 # CURRENT STEP
-V3-D13: Polish the six-center UI and close responsive/state behavior.
+V3-D14: Deploy the V3 candidate and run full API/browser E2E regression.
 
 # NEXT EXACT STEP
-Implement V3-D13 locally: remove unreachable legacy workbench views and legacy permission references from the frontend; align navigation/header/content density, localized statuses, spacing, interaction feedback, loading/empty/error states, responsive breakpoints and no-overlap behavior to the frozen PRD; optimize production chunking; build and statically audit colors/routes/enums, update checkpoint, then continue to V3-D14 browser E2E and deployment.
+Reconnect to `172.20.1.7` through the existing JumpServer browser session; synchronize the committed V3 source and checkpoint without touching port 80; create a fresh PostgreSQL/MinIO backup; build a new immutable API image; run Alembic through `a2c63a4f5798`; deploy through port 443; execute seed, PRICE_VIEW, permission, CRUD, relation, BOM, health, Dify/LLM/RAG/Moodle, console, and responsive browser E2E at 1920x1080, 1600x900, 1440x900, and 1366x768; capture six-center screenshots; update checkpoint, then continue to V3-D15 final report.
 
 # COMPLETED STEPS
+- V3-D13: Replaced the shipped frontend with `AppV3.vue`, removed the legacy monolith, closed responsive layouts at desktop/tablet/mobile breakpoints, localized statuses, and split production chunks.
 - V3-D12: Added exact product price APIs, frozen price metadata, PRICE_VIEW omission for product and BOM payloads, same-page price maintenance, migration `a2c63a4f5798`, and removed independent price UI.
 - V3-D11: Added idempotent semantic V3 seed upgrade and server audit for all minimum counts, 66+ meaningful relationships, per-solution BOMs, frozen fields, and zero dirty naming patterns.
 - V3-D10: Completed generic bidirectional relationships, frozen metadata, searchable relation Drawer, add/remove APIs, cross-center navigation, and migration `f1b5293e4687`.
@@ -86,6 +87,7 @@ Implement V3-D13 locally: remove unreachable legacy workbench views and legacy p
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D13 frontend production build passed with 1,443 modules; application bundle reduced to 58.55 KB before gzip through vendor splitting; static audits found no legacy knowledge permissions, independent price page, model-management page, parameter-template page, negative letter spacing, viewport font scaling, or gradient use in shipped V3 source.
 - V3-D12 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration/security-test compile and `git diff --check` passed; executable security assertions are pending server runtime dependencies.
 - V3-D11 backend/test compile, frontend `pnpm build` (1,443 modules), and `git diff --check` passed; the live `v3_seed_audit.py` is staged for execution immediately after migration/deployment.
 - V3-D10 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration compile and `git diff --check` passed; POST/DELETE relation routes and bidirectional serializers were source-verified.
