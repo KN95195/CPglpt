@@ -34,8 +34,8 @@ async def security_headers(request:Request,call_next):
 class Login(BaseModel): username:str;password:str
 class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
 class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;data_status:str|None=None
-class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';version:str='v1.0';category:str='通用';scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
-class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;version:str|None=None;category:str|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
+class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
+class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
 class ProjectPatch(BaseModel): name:str|None=None;customer:str|None=None;region:str|None=None;scene_id:int|None=None;requirements_json:dict|None=None;bom_json:list|None=None
@@ -249,8 +249,9 @@ def catalog(kind:str,db:Session=Depends(session),u:User=Depends(user)):
  rows=[]
  for x in db.scalars(select(m).order_by(m.updated_at.desc())):
   row={'id':x.id,'name':x.name,'summary':getattr(x,'summary',getattr(x,'description','')),'status':getattr(x,'status','SUPPORTED'),'updatedAt':x.updated_at.isoformat()}
-  for attr,key in [('version','version'),('category','category'),('tier','tier'),('scene_id','sceneId')]:
+  for attr,key in [('code','code'),('version','version'),('category','category'),('software_type','softwareType'),('vendor','vendor'),('deployment_mode','deploymentMode'),('tier','tier'),('scene_id','sceneId')]:
    if hasattr(x,attr):row[key]=getattr(x,attr)
+  if isinstance(x,Software):row['supportedOs']=json.loads(x.supported_os_json or '[]')
   if isinstance(x,Solution):row['scene']=x.scene.name
   rows.append(row)
  return rows
@@ -273,8 +274,9 @@ def center_detail(kind:str,rid:int,db:Session,u:User):
  rec=db.get(model,rid)
  if not rec:raise HTTPException(404,'知识条目不存在')
  result={'id':rec.id,'name':rec.name,'summary':getattr(rec,'summary',getattr(rec,'description','')),'status':getattr(rec,'status','SUPPORTED'),'updatedAt':rec.updated_at.isoformat(),'relations':[]}
- for attr,key in [('version','version'),('category','category'),('tier','tier'),('pain_points','painPoints')]:
+ for attr,key in [('code','code'),('version','version'),('category','category'),('software_type','softwareType'),('vendor','vendor'),('deployment_mode','deploymentMode'),('tier','tier'),('pain_points','painPoints')]:
   if hasattr(rec,attr):result[key]=getattr(rec,attr)
+ if isinstance(rec,Software):result['supportedOs']=json.loads(rec.supported_os_json or '[]')
  if isinstance(rec,Scene):
   solutions=db.scalars(select(Solution).where(Solution.scene_id==rid).order_by(Solution.tier,Solution.name)).all()
   result['relations']=[{'id':x.id,'type':'solutions','name':x.name,'meta':x.tier,'summary':x.summary} for x in solutions]
@@ -308,7 +310,8 @@ def catalog_values(kind,x):
   summary=d.pop('summary')
   if kind in {'model-capabilities','capabilities','algorithms','software'}:d['description']=summary
   else:d['summary']=summary
- allowed={'model-capabilities':{'name','description','category','status'},'capabilities':{'name','description','category','status'},'algorithms':{'name','description','version','category','status'},'software':{'name','description','version','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
+ if 'supported_os' in d:d['supported_os_json']=json.dumps(d.pop('supported_os'),ensure_ascii=False)
+ allowed={'model-capabilities':{'name','description','category','status'},'capabilities':{'name','description','category','status'},'algorithms':{'name','description','version','category','status'},'software':{'name','description','code','software_type','vendor','version','deployment_mode','supported_os_json','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
  return {k:v for k,v in d.items() if k in allowed}
 @app.post('/api/admin/catalog/{kind}',status_code=201)
 def create_catalog(kind:str,x:CatalogIn,db:Session=Depends(session),u:User=Depends(user)):

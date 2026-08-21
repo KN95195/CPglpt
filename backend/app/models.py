@@ -24,7 +24,7 @@ class Capability(Base, Timestamped):
 class Algorithm(Base, Timestamped):
     __tablename__='algorithms'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(120),unique=True); version:Mapped[str]=mapped_column(String(32)); category:Mapped[str]=mapped_column(String(80)); description:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String(32),default='SUPPORTED')
 class Software(Base, Timestamped):
-    __tablename__='software'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(120),unique=True); version:Mapped[str]=mapped_column(String(32)); description:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String(32),default='SUPPORTED')
+    __tablename__='software'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(120),unique=True); code:Mapped[str]=mapped_column(String(80),default=''); software_type:Mapped[str]=mapped_column(String(48),default='PLATFORM'); vendor:Mapped[str]=mapped_column(String(120),default='海智科技'); version:Mapped[str]=mapped_column(String(32)); deployment_mode:Mapped[str]=mapped_column(String(48),default='PRIVATE'); supported_os_json:Mapped[str]=mapped_column(Text,default='[]'); description:Mapped[str]=mapped_column(Text); status:Mapped[str]=mapped_column(String(32),default='SUPPORTED')
 class Scene(Base, Timestamped):
     __tablename__='scenes'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(120),unique=True); summary:Mapped[str]=mapped_column(Text); pain_points:Mapped[str]=mapped_column(Text,default=''); status:Mapped[str]=mapped_column(String(32),default='ON_SALE')
 class Solution(Base, Timestamped):
