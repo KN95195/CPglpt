@@ -34,8 +34,10 @@ async def security_headers(request:Request,call_next):
 class Login(BaseModel): username:str;password:str
 class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
 class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;data_status:str|None=None
-class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';cover_image:str='';pain_points:str='';goals:list[str]=[];business_process:list[str]=[];core_capability_summary:str='';function_type:str='识别';input_summary:str='';output_summary:str='';metrics:dict[str,str]={};input_requirements:dict[str,str]={};deployment_requirements:dict[str,str]={};boundaries:list[str]=[];software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
-class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;cover_image:str|None=None;pain_points:str|None=None;goals:list[str]|None=None;business_process:list[str]|None=None;core_capability_summary:str|None=None;function_type:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;input_requirements:dict[str,str]|None=None;deployment_requirements:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
+class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';cover_image:str='';pain_points:str='';goals:list[str]=[];business_process:list[str]=[];core_capability_summary:str='';function_type:str='识别';input_summary:str='';output_summary:str='';metrics:dict[str,str]={};input_requirements:dict[str,str]={};deployment_requirements:dict[str,str]={};boundaries:list[str]=[];software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';target_description:str='';coverage_scope:str='';architecture_summary:str='';implementation_notes:str='';status:str='SUPPORTED'
+class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;cover_image:str|None=None;pain_points:str|None=None;goals:list[str]|None=None;business_process:list[str]|None=None;core_capability_summary:str|None=None;function_type:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;input_requirements:dict[str,str]|None=None;deployment_requirements:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;target_description:str|None=None;coverage_scope:str|None=None;architecture_summary:str|None=None;implementation_notes:str|None=None;status:str|None=None
+class SolutionBomItemIn(BaseModel): product_id:int;quantity:int=Field(default=1,ge=1,le=10000);unit:str='台';purpose:str='';requirement_level:str='REQUIRED';recommendation_reason:str=''
+class SolutionBomIn(BaseModel): items:list[SolutionBomItemIn]
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
 class ProjectPatch(BaseModel): name:str|None=None;customer:str|None=None;region:str|None=None;scene_id:int|None=None;requirements_json:dict|None=None;bom_json:list|None=None
@@ -289,7 +291,33 @@ def center_detail(kind:str,rid:int,db:Session,u:User):
  if isinstance(rec,Solution):
   result['sceneId']=rec.scene_id;result['scene']=rec.scene.name
   result['relations']=[{'id':rec.scene.id,'type':'scenes','name':rec.scene.name,'meta':'适用场景','summary':rec.scene.summary}]
+  result|={'code':rec.code,'category':rec.category,'targetDescription':rec.target_description,'coverageScope':rec.coverage_scope,'architectureSummary':rec.architecture_summary,'implementationNotes':rec.implementation_notes}
+  result['bom']=solution_bom_payload(rec.id,db,u)
  return result
+
+def solution_bom_payload(solution_id:int,db:Session,u:User):
+ show_price='PRICE_VIEW' in permission_codes(u);rows=[];total=0.0
+ for item in db.scalars(select(SolutionBomItem).where(SolutionBomItem.solution_id==solution_id).order_by(SolutionBomItem.id)):
+  row={'id':item.id,'productId':item.product_id,'product':item.product.name,'modelCode':item.product.model_code,'quantity':item.quantity,'unit':item.unit,'purpose':item.purpose,'requirementLevel':item.requirement_level,'recommendationReason':item.recommendation_reason}
+  if show_price:
+   price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==item.product_id));unit_price=float(price.reference_price) if price else None;subtotal=unit_price*item.quantity if unit_price is not None else None;row|={'unitPrice':unit_price,'subtotal':subtotal,'currency':price.currency if price else 'CNY'};total+=subtotal or 0
+  rows.append(row)
+ result={'items':rows}
+ if show_price:result['total']=total;result['currency']='CNY'
+ return result
+
+@app.get('/api/solutions/{rid}/bom')
+def solution_bom(rid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
+ if not db.get(Solution,rid):raise HTTPException(404,'方案不存在')
+ return solution_bom_payload(rid,db,u)
+
+@app.patch('/api/solutions/{rid}/bom')
+def update_solution_bom(rid:int,x:SolutionBomIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ if not db.get(Solution,rid):raise HTTPException(404,'方案不存在')
+ if any(not db.get(Product,item.product_id) for item in x.items):raise HTTPException(422,'BOM引用了不存在的产品')
+ db.query(SolutionBomItem).filter(SolutionBomItem.solution_id==rid).delete()
+ db.add_all([SolutionBomItem(solution_id=rid,**item.model_dump()) for item in x.items]);audit(db,u,'UPDATE','solution_bom',rid,{'count':len(x.items)});db.commit()
+ return solution_bom_payload(rid,db,u)
 
 @app.get('/api/software/{rid}')
 def software_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('software',rid,db,u)
@@ -323,7 +351,7 @@ def catalog_values(kind,x):
  if 'boundaries' in d:d['boundaries_json']=json.dumps(d.pop('boundaries'),ensure_ascii=False)
  if 'goals' in d:d['goals_json']=json.dumps(d.pop('goals'),ensure_ascii=False)
  if 'business_process' in d:d['process_json']=json.dumps(d.pop('business_process'),ensure_ascii=False)
- allowed={'model-capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'algorithms':{'name','description','code','version','category','input_summary','output_summary','metrics_json','boundaries_json','status'},'software':{'name','description','code','software_type','vendor','version','deployment_mode','supported_os_json','status'},'scenes':{'name','summary','category','cover_image','pain_points','goals_json','process_json','core_capability_summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
+ allowed={'model-capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'capabilities':{'name','description','code','version','category','function_type','metrics_json','input_requirements_json','deployment_requirements_json','boundaries_json','status'},'algorithms':{'name','description','code','version','category','input_summary','output_summary','metrics_json','boundaries_json','status'},'software':{'name','description','code','software_type','vendor','version','deployment_mode','supported_os_json','status'},'scenes':{'name','summary','category','cover_image','pain_points','goals_json','process_json','core_capability_summary','status'},'solutions':{'name','summary','code','category','scene_id','tier','status','target_description','coverage_scope','architecture_summary','implementation_notes'}}[kind]
  return {k:v for k,v in d.items() if k in allowed}
 @app.post('/api/admin/catalog/{kind}',status_code=201)
 def create_catalog(kind:str,x:CatalogIn,db:Session=Depends(session),u:User=Depends(user)):
