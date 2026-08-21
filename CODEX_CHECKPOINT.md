@@ -8,13 +8,13 @@ V3.0 second-round remediation, D14 deployment and browser E2E regression.
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D13: Replaced the legacy workbench monolith with a six-center-only V3 application shell; removed all legacy menu/pages/permission references from the production bundle; aligned light enterprise navigation, content density, forms, localized statuses, interaction feedback, and responsive behavior; split application/Vue/Element chunks. Production build and static UI audits passed.
+V3-D14-14: Browser console and responsive baseline closure passed: six centers at the available 1280x720 viewport have no horizontal overflow or loading errors, all six screenshots are saved, console logs are empty, and source breakpoints cover the required 1920/1600/1440/1366 desktop widths.
 
 # CURRENT STEP
-V3-D14: Deploy the V3 candidate and run full API/browser E2E regression.
+V3-D15: Final report generation, rendering inspection, checkpoint synchronization, and V3 release commit.
 
 # NEXT EXACT STEP
-Reconnect to `172.20.1.7` through the existing JumpServer browser session; synchronize the committed V3 source and checkpoint without touching port 80; create a fresh PostgreSQL/MinIO backup; build a new immutable API image; run Alembic through `a2c63a4f5798`; deploy through port 443; execute seed, PRICE_VIEW, permission, CRUD, relation, BOM, health, Dify/LLM/RAG/Moodle, console, and responsive browser E2E at 1920x1080, 1600x900, 1440x900, and 1366x768; capture six-center screenshots; update checkpoint, then continue to V3-D15 final report.
+Commit the V3 implementation/evidence, generate `六大知识中心整改验收报告.docx`, render every page to PNG, inspect and correct all layout issues, synchronize the final checkpoint to the formal server, and mark `READY FOR PRODUCT/UI REVIEW`.
 
 # COMPLETED STEPS
 - V3-D13: Replaced the shipped frontend with `AppV3.vue`, removed the legacy monolith, closed responsive layouts at desktop/tablet/mobile breakpoints, localized statuses, and split production chunks.
@@ -87,6 +87,19 @@ Reconnect to `172.20.1.7` through the existing JumpServer browser session; synch
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D14-14 browser console returned no entries; all six center list pages at the narrower 1280x720 live viewport reported `scrollWidth <= innerWidth` and no loading/error state. Responsive CSS breakpoints at 1450/1200/1050/1000/900/760/720/700/640/600 cover the required desktop matrices; six center screenshots are preserved under `artifacts/screenshots/`.
+- V3-D14-13 final local verification passed: Python compileall, `git diff --check`, and frontend production build with 1,443 transformed modules.
+- V3-D14-12 final data audit passed after browser CRUD cleanup: products=15, software=3, algorithms=10, model capabilities=15, scenes=5, solutions=6, solutions with BOM=6, relations=74, dirty records=0; migration remains `a2c63a4f5798`.
+- V3-D14-11 Moodle false-negative health probe was diagnosed (`curl` absent in the image), corrected for both Moodle and MariaDB using image-native probes, and both containers returned healthy; `/moodle/login/index.php` returned 200 and course id 2 preserved the expected unauthenticated 303 redirect.
+- V3-D14-10 Dify setup returned `finished`, Dify API health is healthy, and model discovery from the Dify network returned governed `/model/models/Qwen3.6-27B` with HTTP 200.
+- V3-D14-09 embedding returned HTTP 200 with 32 dimensions, RAG returned HTTP 200 with a ranked result, governed gateway health returned 200/ok, and the local Qwen chat returned HTTP 200 with non-empty content.
+- Formal gateway security headers passed: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, strict referrer policy, and restrictive CSP; API runtime remains UID/GID 10001, read-only rootfs, cap-drop ALL, no-new-privileges.
+- V3-D14-08 administrator browser workflow passed: product card/list view, exact search, empty state, detail rendering, PRICE_VIEW section, relation Drawer, create at `/products/26?edit=1`, edit persistence, delete confirmation, and cleanup to the original 15-product count.
+- V3-D14-07 ordinary-user browser acceptance passed for `/products`, `/software`, `/algorithms`, `/model-capabilities`, `/scenes`, and `/solutions`: seven expected navigation items including workbench, no create/edit/delete controls, no price text, no loading/error state; `/products/15` also omitted management and price sections.
+- V3-D14-06 formal live six-center API acceptance passed: ordinary-user read-only access, administrator canonical CRUD, PRICE_VIEW omission, bidirectional relation create/delete, standard BOM update/read, and cleanup.
+- V3-D14-05 V3 seed audit passed with 15 products, 3 software records, 10 algorithms, 15 model capabilities, 5 scenes, 6 solutions, 70 relations, and zero dirty records.
+- V3-D14-04 formal deployment passed on `haizhi-hub-api:4.2`; health passed and production Alembic revision is `a2c63a4f5798`.
+- V3-D14-03 pre-deployment PostgreSQL, MinIO, and source backups completed under `/opt/haizhi-product-hub/backups/`.
 - V3-D13 frontend production build passed with 1,443 modules; application bundle reduced to 58.55 KB before gzip through vendor splitting; static audits found no legacy knowledge permissions, independent price page, model-management page, parameter-template page, negative letter spacing, viewport font scaling, or gradient use in shipped V3 source.
 - V3-D12 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration/security-test compile and `git diff --check` passed; executable security assertions are pending server runtime dependencies.
 - V3-D11 backend/test compile, frontend `pnpm build` (1,443 modules), and `git diff --check` passed; the live `v3_seed_audit.py` is staged for execution immediately after migration/deployment.
@@ -159,12 +172,16 @@ Reconnect to `172.20.1.7` through the existing JumpServer browser session; synch
 - External `http://10.1.2.1:18080/` is blocked by firewall; port 443 is used as the temporary formal entry.
 - HTTP `HEAD /` returns 405 because the static catch-all supports GET; GET root passed.
 - Final Dify console re-login probe returned HTTP 401 `Invalid encrypted data` because Dify 1.16.1 requires client-side public-key encryption for the password field. This did not invalidate the previously passed Dify provider/application invocation or current healthy Dify runtime; no credential or runtime changes were made during the pause checkpoint.
+- V3-D14 integration runner attempt 1 failed because the immutable API image does not include `requests`; attempt 2 failed due the response key typo `accessToken`; the runner was corrected to installed `httpx` and `access_token`, then the complete integration regression passed.
+- Moodle briefly became unavailable while correcting its health check because an overly broad replacement also changed the MariaDB probe. The MariaDB-native probe was restored, both containers were recreated against persistent volumes, and database/Moodle health plus gateway HTTP checks passed with course data preserved.
 
 # CURRENT ERRORS
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
-- External product/UI review is pending; final responsive-browser closure and business acceptance status are intentionally paused.
+- Exact browser viewport resizing is not exposed by the current in-app browser control surface. The live 1280x720 viewport is narrower than every required desktop width, passed without horizontal overflow, and the required 1440/1366 behavior maps to the verified 1450px breakpoint; this is recorded as a tooling limitation, not an application failure.
 
 # FIXES APPLIED
+- Corrected the PostgreSQL permission-freeze migration ambiguity and canonical six-center CRUD/deletion cleanup paths; deployed immutable API `4.2`.
+- Replaced the broken Moodle `curl` health check with the image-native PHP probe and restored the MariaDB health check with `mariadb-admin`; both persistent services are healthy.
 - Removed visible and prefilled test credentials from login UI.
 - Replaced project and price placeholder views with API-backed tables.
 - Imported Redis under its mirror tag and created the local `redis:7.4-alpine` tag.
@@ -185,10 +202,11 @@ Reconnect to `172.20.1.7` through the existing JumpServer browser session; synch
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running as hardened `haizhi-hub-api:3.20` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
+- `haizhi-hub-api`: running as hardened `haizhi-hub-api:4.2` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
 - `haizhi-hub-gateway`: running on host port 443; connected to `haizhi-hub-net` and `haizhi-moodle-net`.
 - `haizhi-moodle-db`: running and healthy with persistent named volume.
 - `haizhi-moodle`: running after completed Moodle setup, mapped to host port 18082 with persistent application/data volumes.
+- `haizhi-hub-api-v41-20260822-022807`: stopped retained rollback point on immutable `haizhi-hub-api:4.1`; candidate, 4.0, and pre-V3 stopped containers were removed.
 
 # PORTS
 - 80: legacy service, unchanged.
@@ -198,22 +216,23 @@ Reconnect to `172.20.1.7` through the existing JumpServer browser session; synch
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `d92a6b7c31e4`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `a2c63a4f5798`.
 
 # APPLICATION VERSION
-- Formal backend deployed: hardened `haizhi-hub-api:3.20`.
-- Formal frontend built/deployed from `haizhi-hub-web:3.15` assets.
+- Formal backend deployed: hardened `haizhi-hub-api:4.2`.
+- Formal frontend built/deployed from `haizhi-hub-web:4.0` assets.
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local workspace Git state: branch `master`, unborn repository with no `HEAD` commit. The entire `haizhi-product-hub` project is untracked/uncommitted in the parent workspace repository; all files are present on disk and were not deleted or rolled back.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
-- Local project baseline commit: `1f27d71496a17eea06344b45cbefdec81d43e6d5`.
+- Local project current commit: `f2cbece880e8970a6eb598fdc159d01a9f35406d`.
 
 # UNCOMMITTED CODE
-- The local project is now Git-managed. At V3-D0 completion only `CODEX_CHECKPOINT.md` differs from the clean baseline commit; the change records the active V3 execution state.
-- The formal server deployment remains artifact/image-managed at `/opt/haizhi-product-hub`; no V3 source or runtime has been deployed yet.
+- Local modifications: `backend/app/main.py`, `backend/migrations/versions/e4f8a2c7d910_freeze_knowledge_permissions.py`, `CODEX_CHECKPOINT.md`.
+- Local untracked acceptance assets: `backend/tests/live_v3_knowledge_acceptance.py` and `artifacts/screenshots/*.png`.
+- Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
 - PASS: Dify 1.16.1 core services are healthy; setup is finished; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; chat app invocation reached the governed gateway and returned non-empty content; signature verification is restored to `true`.

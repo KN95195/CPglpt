@@ -242,9 +242,11 @@ def update_product_price(pid:int,x:ProductPricePatch,db:Session=Depends(session)
  else:price=ProductPrice(product_id=pid,cost_price=0,**values);db.add(price)
  audit(db,u,'UPDATE','product_price',pid,x.model_dump(mode='json'));db.commit();db.refresh(price)
  return {'referencePrice':float(price.reference_price),'currency':price.currency,'taxIncluded':price.tax_included,'taxRate':float(price.tax_rate),'validUntil':price.valid_until.isoformat() if price.valid_until else None,'notes':price.notes}
+@app.post('/api/products',status_code=201)
 @app.post('/api/admin/products',status_code=201)
 def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p)
+@app.patch('/api/products/{pid}')
 @app.patch('/api/admin/products/{pid}')
 def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
@@ -253,11 +255,20 @@ def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Dep
  if 'dynamic_fields' in values:values['dynamic_fields_json']=json.dumps(values.pop('dynamic_fields'),ensure_ascii=False)
  for k,v in values.items(): setattr(p,k,v)
  p.owner=u.display_name;audit(db,u,'UPDATE','product',p.id,values);db.commit();db.refresh(p);return product_detail_dto(p,db)
+@app.delete('/api/products/{pid}',status_code=204)
 @app.delete('/api/admin/products/{pid}',status_code=204)
 def delete_product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
- db.query(ProductCapability).filter(ProductCapability.product_id==pid).delete();audit(db,u,'DELETE','product',pid,{'name':p.name,'modelCode':p.model_code});db.delete(p);db.commit()
+ db.query(ProductCapability).filter(ProductCapability.product_id==pid).delete()
+ db.query(ProductPrice).filter(ProductPrice.product_id==pid).delete()
+ db.query(SolutionBomItem).filter(SolutionBomItem.product_id==pid).delete()
+ db.query(DocumentAsset).filter(DocumentAsset.product_id==pid).update({'product_id':None})
+ db.query(KnowledgeRelation).filter(
+  ((KnowledgeRelation.source_type=='products')&(KnowledgeRelation.source_id==pid))|
+  ((KnowledgeRelation.target_type=='products')&(KnowledgeRelation.target_id==pid))
+ ).delete(synchronize_session=False)
+ audit(db,u,'DELETE','product',pid,{'name':p.name,'modelCode':p.model_code});db.delete(p);db.commit()
 @app.get('/api/admin/audit-logs')
 def audit_logs(limit:int=100,db:Session=Depends(session),u:User=Depends(permit('SYSTEM_MANAGE'))):
  rows=db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(min(max(limit,1),500)))
@@ -416,6 +427,10 @@ def delete_catalog(kind:str,rid:int,db:Session=Depends(session),u:User=Depends(u
  rec=db.get(m,rid)
  if not rec:raise HTTPException(404,'记录不存在')
  if kind in {'model-capabilities','capabilities'}:db.query(ProductCapability).filter(ProductCapability.capability_id==rid).delete()
+ db.query(KnowledgeRelation).filter(
+  ((KnowledgeRelation.source_type==kind)&(KnowledgeRelation.source_id==rid))|
+  ((KnowledgeRelation.target_type==kind)&(KnowledgeRelation.target_id==rid))
+ ).delete(synchronize_session=False)
  audit(db,u,'DELETE',kind,rid,{'name':rec.name});db.delete(rec)
  try:db.commit()
  except Exception as exc:db.rollback();raise HTTPException(409,'记录仍被业务数据引用') from exc
@@ -489,6 +504,20 @@ async def ai(x:BomIn,u:User=Depends(user),db:Session=Depends(session)):
   message=r.json()['choices'][0]['message'];content=message.get('content') or message.get('reasoning') or message.get('reasoning_content') or '模型已响应，但未返回可展示文本';db.add(AiInteractionLog(request_id=rid,user_id=u.id,provider='local-llm',model_id=settings.ai_model,latency_ms=int((time.time()-started)*1000),success=True));db.commit();return {'requestId':rid,'mode':'llm','content':content}
  except Exception as e:
   db.add(AiInteractionLog(request_id=rid,user_id=u.id,provider='local-llm',model_id=settings.ai_model,latency_ms=int((time.time()-started)*1000),success=False,failure_reason=str(e)[:300]));db.commit();return {'requestId':rid,'mode':'rule-fallback','content':'AI服务暂不可用，已切换至规则式配单。'}
+
+# Frozen V3 aliases keep knowledge-center writes on the same canonical paths as reads.
+# These routes are declared after specific APIs so existing business endpoints retain priority.
+@app.post('/api/{kind}',status_code=201)
+def create_center(kind:str,x:CatalogIn,db:Session=Depends(session),u:User=Depends(user)):
+ return create_catalog(kind,x,db,u)
+
+@app.patch('/api/{kind}/{rid}')
+def update_center(kind:str,rid:int,x:CatalogPatch,db:Session=Depends(session),u:User=Depends(user)):
+ return update_catalog(kind,rid,x,db,u)
+
+@app.delete('/api/{kind}/{rid}',status_code=204)
+def delete_center(kind:str,rid:int,db:Session=Depends(session),u:User=Depends(user)):
+ return delete_catalog(kind,rid,db,u)
 
 STATIC_ROOT=os.path.join(os.path.dirname(os.path.dirname(__file__)),'static')
 @app.get('/{path:path}',include_in_schema=False)

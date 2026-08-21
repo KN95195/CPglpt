@@ -21,8 +21,10 @@ def upgrade():
     ]:
         bind.execute(sa.text("""
             INSERT INTO permissions (code, name, description, created_at, updated_at)
-            SELECT :code, :name, '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE code = :code)
+            SELECT CAST(:code AS VARCHAR), CAST(:name AS VARCHAR), '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            WHERE NOT EXISTS (
+                SELECT 1 FROM permissions WHERE code = CAST(:code AS VARCHAR)
+            )
         """), {'code': code, 'name': name})
 
     mapping = {
