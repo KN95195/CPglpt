@@ -10,13 +10,13 @@ from sqlalchemy import select,func
 from sqlalchemy.orm import Session
 from .database import Base,engine,session
 from .models import *
-from .seed import bootstrap
+from .seed import bootstrap,ensure_v3_seed
 from .config import settings
 from .storage import storage
 security=HTTPBearer(auto_error=False)
 @asynccontextmanager
 async def lifespan(app):
- with next(session()) as db: bootstrap(db)
+ with next(session()) as db: bootstrap(db);ensure_v3_seed(db)
  yield
 app=FastAPI(title='海智产品中心正式版',version='1.0.0',lifespan=lifespan)
 login_failures={}

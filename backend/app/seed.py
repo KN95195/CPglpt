@@ -1,6 +1,6 @@
 import json, hashlib, hmac, os, base64
 from sqlalchemy import select
-from .models import Role,Permission,RolePermission,User,ProductCategory,Product,ProductCapability,Capability,Algorithm,Software,Scene,Solution,BomRule,ProductPrice
+from .models import Role,Permission,RolePermission,User,ProductCategory,Product,ProductCapability,Capability,Algorithm,Software,Scene,Solution,BomRule,ProductPrice,SolutionBomItem,KnowledgeRelation
 class Passwords:
  def hash(self,value):
   salt=os.urandom(16); digest=hashlib.pbkdf2_hmac('sha256',value.encode(),salt,210000)
@@ -40,3 +40,50 @@ def bootstrap(db):
  db.add_all([Solution(name=s.name+'标准方案',scene_id=s.id,tier='标准型',summary='覆盖核心能力与标准设备的可落地方案。') for s in scenes]+[Solution(name='桥梁防撞增强方案',scene_id=scenes[0].id,tier='增强型',summary='增加雷视融合与冗余链路。')])
  db.add_all([BomRule(code='BRIDGE_AIS',name='桥梁防撞AIS融合规则',condition_json='{"scene":"桥梁防撞","ais":true}',recommendation_json='{"model":"HZ-AS-900","quantity":1,"reason":"提供AIS融合"}'),BomRule(code='BRIDGE_CAMERA',name='桥梁防撞球机规则',condition_json='{"scene":"桥梁防撞"}',recommendation_json='{"model":"HZ-VC-700","quantity_from":"ptz_count","reason":"提供球机联动"}')])
  db.flush();db.add_all([ProductPrice(product_id=p.id,reference_price=100000+i*12500,cost_price=65000+i*8000) for i,p in enumerate(products[:10])]);db.commit()
+
+def ensure_v3_seed(db):
+ products=list(db.scalars(select(Product).order_by(Product.id)))
+ software=list(db.scalars(select(Software).order_by(Software.id)))
+ algorithms=list(db.scalars(select(Algorithm).order_by(Algorithm.id)))
+ capabilities=list(db.scalars(select(Capability).order_by(Capability.id)))
+ scenes=list(db.scalars(select(Scene).order_by(Scene.id)))
+ solutions=list(db.scalars(select(Solution).order_by(Solution.id)))
+ if not all([products,software,algorithms,capabilities,scenes,solutions]):return
+
+ product_types=['HARDWARE','HARDWARE','SOFTWARE_PRODUCT','SYSTEM_SOLUTION','HARDWARE','AI_PRODUCT','HARDWARE','HARDWARE','SOFTWARE_PRODUCT','AI_PRODUCT','AI_PRODUCT','AI_PRODUCT','HARDWARE','ACCESSORY','SOFTWARE_PRODUCT']
+ for index,product in enumerate(products):
+  product.product_type=product_types[index%len(product_types)];product.main_image='';product.dynamic_fields_json=json.dumps({'工作温度':'-20℃至60℃','防护等级':'IP66'} if product.product_type=='HARDWARE' else {'部署方式':'私有化部署','支持架构':'x86/ARM'})
+
+ software_profiles=[('HZ-SW-OC','PLATFORM','PRIVATE',['Linux','国产操作系统']),('HZ-SW-AI','PLATFORM','HYBRID',['Linux']),('HZ-SW-FUSION','SERVICE','PRIVATE',['Linux','Windows'])]
+ for item,profile in zip(software,software_profiles):item.code,item.software_type,item.deployment_mode,systems=profile;item.vendor='海智科技';item.supported_os_json=json.dumps(systems,ensure_ascii=False)
+
+ for index,item in enumerate(algorithms):
+  item.code=f'HZ-ALG-{index+1:03d}';item.input_summary='AIS、雷达、视频或结构化目标数据';item.output_summary='风险事件、目标属性与置信度结果';item.metrics_json=json.dumps({'准确率':f'{92+index%6}%','处理帧率':f'{20+index%10} FPS'},ensure_ascii=False);item.boundaries_json=json.dumps(['需满足输入数据质量要求','极端天气下性能可能下降'],ensure_ascii=False)
+
+ function_types=['融合','检测','预警','识别','预警','联动','检测','跟踪','预测','分析','识别','联动','分析','通信','融合']
+ for index,item in enumerate(capabilities):
+  item.code=f'HZ-MC-{index+1:03d}';item.version='V2.'+str(index%4+1);item.function_type=function_types[index%len(function_types)];item.metrics_json=json.dumps({'准确率':f'{93+index%5}%','响应延迟':f'{80+index*3} ms'},ensure_ascii=False);item.input_requirements_json=json.dumps({'输入类型':'视频/结构化数据','推荐分辨率':'1080P'},ensure_ascii=False);item.deployment_requirements_json=json.dumps({'运行环境':'Linux','推荐算力':'16 TOPS'},ensure_ascii=False);item.boundaries_json=json.dumps(['需完成现场标定','遮挡严重时需人工复核'],ensure_ascii=False)
+
+ for index,item in enumerate(scenes):
+  item.category=['水域安全','航道监管','港口监管','综合监管','海上设施'][index%5];item.goals_json=json.dumps(['提升多源感知覆盖率','缩短风险事件响应时间'],ensure_ascii=False);item.process_json=json.dumps(['采集多源数据','模型分析研判','联动告警处置','形成事件闭环'],ensure_ascii=False);item.core_capability_summary='融合感知、目标识别、风险预警与联动处置';item.cover_image=''
+
+ for index,item in enumerate(solutions):
+  item.code=f'HZ-SOL-{index+1:03d}';item.category=scenes[index%len(scenes)].category;item.status='ACTIVE';item.target_description='面向'+item.scene.name+'的标准化建设与交付';item.coverage_scope='覆盖感知、分析、告警、处置和复盘全流程';item.architecture_summary='前端感知层、边缘智能层、平台服务层和业务应用层';item.implementation_notes='按现场勘察、方案确认、部署联调和验收交付四阶段实施'
+
+ dirty_tokens=['测试','嗯嗯嗯','Product A','Demo']
+ for model in [Product,Software,Algorithm,Capability,Scene,Solution]:
+  for item in db.scalars(select(model)):
+   if any(token.lower() in item.name.lower() for token in dirty_tokens):item.name=f'海智正式知识条目-{model.__tablename__}-{item.id}'
+
+ for solution in solutions:
+  if not db.scalar(select(SolutionBomItem.id).where(SolutionBomItem.solution_id==solution.id).limit(1)):
+   for offset,product in enumerate(products[:3]):db.add(SolutionBomItem(solution_id=solution.id,product_id=product.id,quantity=1 if offset<2 else 2,unit='套' if offset<2 else '台',purpose=['核心平台','智能分析','现场感知'][offset],requirement_level=['REQUIRED','RECOMMENDED','OPTIONAL'][offset],recommendation_reason='满足方案标准能力覆盖'))
+
+ relation_specs=[]
+ for index,product in enumerate(products):
+  relation_specs += [('products',product.id,'model-capabilities',capabilities[index%len(capabilities)].id,{'supportVersion':'V2.x','recommendedConcurrency':4,'maxConcurrency':8,'supportStatus':'SUPPORTED'}),('products',product.id,'software',software[index%len(software)].id,{'minimumVersion':'V1.0','supportStatus':'SUPPORTED','purpose':'业务平台接入'}),('products',product.id,'algorithms',algorithms[index%len(algorithms)].id,{'supportVersion':'V1.x','purpose':'智能分析','supportStatus':'SUPPORTED'}),('products',product.id,'scenes',scenes[index%len(scenes)].id,{'relationLevel':'RECOMMENDED','recommendationReason':'匹配核心业务需求'})]
+ for index,solution in enumerate(solutions):relation_specs.append(('solutions',solution.id,'scenes',solution.scene_id,{'relationLevel':'CORE','purpose':'标准适用场景'}))
+ for source_type,source_id,target_type,target_id,metadata in relation_specs:
+  exists=db.scalar(select(KnowledgeRelation.id).where(KnowledgeRelation.source_type==source_type,KnowledgeRelation.source_id==source_id,KnowledgeRelation.target_type==target_type,KnowledgeRelation.target_id==target_id).limit(1))
+  if not exists:db.add(KnowledgeRelation(source_type=source_type,source_id=source_id,target_type=target_type,target_id=target_id,metadata_json=json.dumps(metadata,ensure_ascii=False)))
+ db.commit()
