@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D10 relationship Drawer and bidirectional links.
+V3.0 second-round remediation, D11 seed data cleanup and completion.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D9: Extended solutions with frozen metadata, architecture and implementation content; added persistent standard BOM items referencing real products/models and PRICE_VIEW-safe GET/PATCH APIs; implemented solution editing and a product-manager BOM editor with localized requirement levels and permission-gated totals. Frontend build, backend/migration compile, and diff checks passed.
+V3-D10: Added persistent generic relationships across all six centers, metadata-rich POST/DELETE APIs, bidirectional detail serialization and navigation, and a searchable right-side relation Drawer supporting selection, metadata, removal, and product-manager permissions. Frontend build, backend/migration compile, and diff checks passed.
 
 # CURRENT STEP
-V3-D10: Implement relationship Drawer, metadata, and bidirectional navigation.
+V3-D11: Clean and complete semantic seed data.
 
 # NEXT EXACT STEP
-Implement V3-D10 locally: add a generic relation model/API (`POST /api/relations`, `DELETE /api/relations/{id}`) supporting all six centers and frozen relation metadata; return real bidirectional relations from each detail API; replace placeholder actions with a searchable right-side relation Drawer; verify add/delete and cross-center navigation, update checkpoint, then continue to V3-D11 seed cleanup/completion.
+Implement V3-D11 locally: make seeding idempotently upgrade existing databases; guarantee products 15+, software 3+, algorithms 10+, model capabilities 15+, scenes 5+, solutions 6+, a standard BOM for every solution, and meaningful cross-center relationships; populate new frozen fields; remove dirty names/data patterns; add a repeatable seed audit script and run it, update checkpoint, then continue to V3-D12 PRICE_VIEW security closure.
 
 # COMPLETED STEPS
+- V3-D10: Completed generic bidirectional relationships, frozen metadata, searchable relation Drawer, add/remove APIs, cross-center navigation, and migration `f1b5293e4687`.
 - V3-D9: Completed solution metadata, persistent standard BOM, PRICE_VIEW-safe BOM payloads, product-manager BOM editor, and migration `e0a4182d3576`.
 - V3-D8: Completed scene-center frozen metadata, goals/process/capability content, localized CRUD/detail forms, and migration `d9f3071c2465`.
 - V3-D7: Completed model-capability frozen metadata, metrics, input/deployment requirements, boundaries, localized CRUD/detail forms, and migration `c8e2f60b1354`.
@@ -83,6 +84,7 @@ Implement V3-D10 locally: add a generic relation model/API (`POST /api/relations
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D10 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration compile and `git diff --check` passed; POST/DELETE relation routes and bidirectional serializers were source-verified.
 - V3-D9 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed; source checks verified BOM price fields are added only inside the PRICE_VIEW branch.
 - V3-D8 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed.
 - V3-D7 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed.

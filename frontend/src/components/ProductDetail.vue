@@ -15,6 +15,12 @@ const draft = reactive<Record<string, any>>({})
 const dynamicFields = ref<Array<{ key: string; value: string }>>([])
 const productTypes = [{label:'硬件产品',value:'HARDWARE'},{label:'软件产品',value:'SOFTWARE_PRODUCT'},{label:'算法/模型商业产品',value:'AI_PRODUCT'},{label:'系统/解决方案产品',value:'SYSTEM_SOLUTION'},{label:'配套设备',value:'ACCESSORY'}]
 const typeName = computed(() => productTypes.find((item) => item.value === props.record.productType)?.label || '硬件产品')
+const allRelations = computed(() => {
+  const legacy = (props.record.capabilities || []).map((item:any) => ({ ...item, type: 'model-capabilities' }))
+  const modern = props.record.relations || []
+  const seen = new Set(modern.map((item:any) => item.type + ':' + item.id))
+  return [...modern, ...legacy.filter((item:any) => !seen.has(item.type + ':' + item.id))]
+})
 const recommendations: Record<string, string[]> = {HARDWARE:['外形尺寸','工作温度','防护等级'],SOFTWARE_PRODUCT:['部署方式','操作系统','数据库'],AI_PRODUCT:['模型框架','输入类型','推理算力'],SYSTEM_SOLUTION:['部署架构','适用规模','交付周期'],ACCESSORY:['接口类型','供电方式','安装方式']}
 
 function resetDraft() {
@@ -51,7 +57,7 @@ watch(() => props.startEditing, (value) => { if(value)beginEdit() })
           <el-descriptions v-else-if="Object.keys(record.dynamicFields||{}).length" :column="2" border><el-descriptions-item v-for="(value,key) in record.dynamicFields" :key="key" :label="String(key)">{{ value }}</el-descriptions-item></el-descriptions><el-empty v-else description="暂无产品参数" :image-size="64" />
         </section>
 
-        <section class="product-section"><div class="section-head"><div><h2>关联知识</h2><p>模型能力、软件、算法、场景与方案的真实关联。</p></div><el-button v-if="canManage" :icon="Link" @click="emit('relate','all')">选择关联</el-button></div><div v-if="record.capabilities?.length" class="relation-grid"><button v-for="relation in record.capabilities" :key="relation.id" @click="emit('openRelation',relation)"><strong>{{ relation.name }}</strong><small>{{ relation.category }}</small></button></div><el-empty v-else description="暂无关联知识" :image-size="64" /></section>
+        <section class="product-section"><div class="section-head"><div><h2>关联知识</h2><p>模型能力、软件、算法、场景与方案的真实关联。</p></div><el-button v-if="canManage" :icon="Link" @click="emit('relate','all')">选择关联</el-button></div><div v-if="allRelations.length" class="relation-grid"><button v-for="relation in allRelations" :key="relation.type+relation.id" @click="emit('openRelation',relation)"><strong>{{ relation.name }}</strong><small>{{ relation.category || relation.summary || '查看关联详情' }}</small></button></div><el-empty v-else description="暂无关联知识" :image-size="64" /></section>
 
         <section v-if="showPrice" class="product-section"><div class="section-head"><div><h2>价格信息</h2><p>仅具备价格查看权限的用户可见。</p></div></div><div v-if="record.price" class="price-value"><span>参考价格</span><strong>{{ record.price.currency }} {{ Number(record.price.referencePrice).toLocaleString() }}</strong></div><el-empty v-else description="暂无价格信息" :image-size="56" /></section>
       </main>

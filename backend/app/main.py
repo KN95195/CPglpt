@@ -38,6 +38,7 @@ class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str
 class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;cover_image:str|None=None;pain_points:str|None=None;goals:list[str]|None=None;business_process:list[str]|None=None;core_capability_summary:str|None=None;function_type:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;input_requirements:dict[str,str]|None=None;deployment_requirements:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;target_description:str|None=None;coverage_scope:str|None=None;architecture_summary:str|None=None;implementation_notes:str|None=None;status:str|None=None
 class SolutionBomItemIn(BaseModel): product_id:int;quantity:int=Field(default=1,ge=1,le=10000);unit:str='台';purpose:str='';requirement_level:str='REQUIRED';recommendation_reason:str=''
 class SolutionBomIn(BaseModel): items:list[SolutionBomItemIn]
+class RelationIn(BaseModel): source_type:str;source_id:int;target_type:str;target_id:int;metadata:dict[str,str|int|bool]={}
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
 class ProjectPatch(BaseModel): name:str|None=None;customer:str|None=None;region:str|None=None;scene_id:int|None=None;requirements_json:dict|None=None;bom_json:list|None=None
@@ -74,6 +75,13 @@ def dto(p):return {'id':p.id,'name':p.name,'productType':p.product_type,'modelCo
 def product_detail_dto(p,db):
  caps=db.scalars(select(Capability).join(ProductCapability,Capability.id==ProductCapability.capability_id).where(ProductCapability.product_id==p.id)).all()
  return dto(p)|{'dynamicFields':json.loads(p.dynamic_fields_json or '{}'),'capabilities':[{'id':c.id,'type':'model-capabilities','name':c.name,'category':c.category,'meta':c.category,'summary':c.description} for c in caps]}
+RELATION_MODELS={'products':Product,'software':Software,'algorithms':Algorithm,'model-capabilities':Capability,'scenes':Scene,'solutions':Solution}
+def relation_payload(kind:str,rid:int,db:Session):
+ rows=db.scalars(select(KnowledgeRelation).where(((KnowledgeRelation.source_type==kind)&(KnowledgeRelation.source_id==rid))|((KnowledgeRelation.target_type==kind)&(KnowledgeRelation.target_id==rid))).order_by(KnowledgeRelation.updated_at.desc())).all();result=[]
+ for rel in rows:
+  outgoing=rel.source_type==kind and rel.source_id==rid;other_type=rel.target_type if outgoing else rel.source_type;other_id=rel.target_id if outgoing else rel.source_id;other=db.get(RELATION_MODELS[other_type],other_id)
+  if other:result.append({'relationId':rel.id,'id':other_id,'type':other_type,'name':other.name,'meta':json.loads(rel.metadata_json or '{}'),'summary':getattr(other,'summary',getattr(other,'description',''))})
+ return result
 def audit(db,u,action,resource_type,resource_id,detail=None):
  db.add(AuditLog(user_id=u.id,action=action,resource_type=resource_type,resource_id=str(resource_id),detail_json=json.dumps(detail or {},ensure_ascii=False)))
 def normalize_chat_payload(payload):
@@ -213,7 +221,7 @@ def product_categories(db:Session=Depends(session),u:User=Depends(permit('KNOWLE
 def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  p=db.get(Product,pid)
  if not p:raise HTTPException(404,'产品不存在')
- result=product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat()}
+ result=product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'relations':relation_payload('products',pid,db)}
  if 'PRICE_VIEW' in permission_codes(u):
   price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid))
   result['price']={'referencePrice':float(price.reference_price),'currency':price.currency} if price else None
@@ -278,7 +286,7 @@ def center_detail(kind:str,rid:int,db:Session,u:User):
  if not model:raise HTTPException(404,'模块不存在')
  rec=db.get(model,rid)
  if not rec:raise HTTPException(404,'知识条目不存在')
- result={'id':rec.id,'name':rec.name,'summary':getattr(rec,'summary',getattr(rec,'description','')),'status':getattr(rec,'status','SUPPORTED'),'updatedAt':rec.updated_at.isoformat(),'relations':[]}
+ result={'id':rec.id,'name':rec.name,'summary':getattr(rec,'summary',getattr(rec,'description','')),'status':getattr(rec,'status','SUPPORTED'),'updatedAt':rec.updated_at.isoformat(),'relations':relation_payload(kind,rid,db)}
  for attr,key in [('code','code'),('version','version'),('category','category'),('software_type','softwareType'),('vendor','vendor'),('deployment_mode','deploymentMode'),('tier','tier'),('pain_points','painPoints')]:
   if hasattr(rec,attr):result[key]=getattr(rec,attr)
  if isinstance(rec,Software):result['supportedOs']=json.loads(rec.supported_os_json or '[]')
@@ -287,10 +295,10 @@ def center_detail(kind:str,rid:int,db:Session,u:User):
  if isinstance(rec,Scene):result|={'category':rec.category,'coverImage':rec.cover_image,'painPoints':rec.pain_points,'goals':json.loads(rec.goals_json or '[]'),'businessProcess':json.loads(rec.process_json or '[]'),'coreCapabilitySummary':rec.core_capability_summary}
  if isinstance(rec,Scene):
   solutions=db.scalars(select(Solution).where(Solution.scene_id==rid).order_by(Solution.tier,Solution.name)).all()
-  result['relations']=[{'id':x.id,'type':'solutions','name':x.name,'meta':x.tier,'summary':x.summary} for x in solutions]
+  known={(x['type'],x['id']) for x in result['relations']};result['relations'] += [{'id':x.id,'type':'solutions','name':x.name,'meta':{'relationLevel':x.tier},'summary':x.summary} for x in solutions if ('solutions',x.id) not in known]
  if isinstance(rec,Solution):
   result['sceneId']=rec.scene_id;result['scene']=rec.scene.name
-  result['relations']=[{'id':rec.scene.id,'type':'scenes','name':rec.scene.name,'meta':'适用场景','summary':rec.scene.summary}]
+  if not any(x['type']=='scenes' and x['id']==rec.scene.id for x in result['relations']):result['relations'].append({'id':rec.scene.id,'type':'scenes','name':rec.scene.name,'meta':{'purpose':'适用场景'},'summary':rec.scene.summary})
   result|={'code':rec.code,'category':rec.category,'targetDescription':rec.target_description,'coverageScope':rec.coverage_scope,'architectureSummary':rec.architecture_summary,'implementationNotes':rec.implementation_notes}
   result['bom']=solution_bom_payload(rec.id,db,u)
  return result
@@ -319,6 +327,21 @@ def update_solution_bom(rid:int,x:SolutionBomIn,db:Session=Depends(session),u:Us
  db.add_all([SolutionBomItem(solution_id=rid,**item.model_dump()) for item in x.items]);audit(db,u,'UPDATE','solution_bom',rid,{'count':len(x.items)});db.commit()
  return solution_bom_payload(rid,db,u)
 
+@app.post('/api/relations',status_code=201)
+def create_relation(x:RelationIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ if x.source_type not in RELATION_MODELS or x.target_type not in RELATION_MODELS:raise HTTPException(422,'关系对象类型无效')
+ if x.source_type==x.target_type and x.source_id==x.target_id:raise HTTPException(422,'不能关联对象自身')
+ if not db.get(RELATION_MODELS[x.source_type],x.source_id) or not db.get(RELATION_MODELS[x.target_type],x.target_id):raise HTTPException(422,'关系对象不存在')
+ existing=db.scalar(select(KnowledgeRelation).where(KnowledgeRelation.source_type==x.source_type,KnowledgeRelation.source_id==x.source_id,KnowledgeRelation.target_type==x.target_type,KnowledgeRelation.target_id==x.target_id))
+ if existing:raise HTTPException(409,'关系已存在')
+ rec=KnowledgeRelation(source_type=x.source_type,source_id=x.source_id,target_type=x.target_type,target_id=x.target_id,metadata_json=json.dumps(x.metadata,ensure_ascii=False));db.add(rec);db.flush();audit(db,u,'CREATE','knowledge_relation',rec.id,x.model_dump());db.commit();db.refresh(rec);return {'id':rec.id}
+
+@app.delete('/api/relations/{rid}',status_code=204)
+def delete_relation(rid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ rec=db.get(KnowledgeRelation,rid)
+ if not rec:raise HTTPException(404,'关系不存在')
+ audit(db,u,'DELETE','knowledge_relation',rid,{});db.delete(rec);db.commit()
+
 @app.get('/api/software/{rid}')
 def software_detail(rid:int,db:Session=Depends(session),u:User=Depends(user)):return center_detail('software',rid,db,u)
 @app.get('/api/algorithms/{rid}')
@@ -333,7 +356,8 @@ def scene_detail(sid:int,db:Session=Depends(session),u:User=Depends(permit('KNOW
  if not rec:raise HTTPException(404,'场景不存在')
  solutions=db.scalars(select(Solution).where(Solution.scene_id==sid).order_by(Solution.tier,Solution.name)).all()
  relation_rows=[{'id':x.id,'name':x.name,'tier':x.tier,'summary':x.summary} for x in solutions]
- return {'id':rec.id,'name':rec.name,'category':rec.category,'summary':rec.summary,'coverImage':rec.cover_image,'painPoints':rec.pain_points,'goals':json.loads(rec.goals_json or '[]'),'businessProcess':json.loads(rec.process_json or '[]'),'coreCapabilitySummary':rec.core_capability_summary,'status':rec.status,'updatedAt':rec.updated_at.isoformat(),'solutions':relation_rows,'relations':[{'id':x['id'],'type':'solutions','name':x['name'],'meta':x['tier'],'summary':x['summary']} for x in relation_rows]}
+ relations=relation_payload('scenes',sid,db);known={(x['type'],x['id']) for x in relations};relations += [{'id':x['id'],'type':'solutions','name':x['name'],'meta':{'relationLevel':x['tier']},'summary':x['summary']} for x in relation_rows if ('solutions',x['id']) not in known]
+ return {'id':rec.id,'name':rec.name,'category':rec.category,'summary':rec.summary,'coverImage':rec.cover_image,'painPoints':rec.pain_points,'goals':json.loads(rec.goals_json or '[]'),'businessProcess':json.loads(rec.process_json or '[]'),'coreCapabilitySummary':rec.core_capability_summary,'status':rec.status,'updatedAt':rec.updated_at.isoformat(),'solutions':relation_rows,'relations':relations}
 def catalog_model(kind):
  meta={'model-capabilities':Capability,'capabilities':Capability,'algorithms':Algorithm,'software':Software,'scenes':Scene,'solutions':Solution}.get(kind)
  if not meta:raise HTTPException(404,'模块不存在')
