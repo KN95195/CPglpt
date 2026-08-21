@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D12 PRICE_VIEW security closure.
+V3.0 second-round remediation, D13 UI polish and responsive closure.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D11: Added an idempotent V3 production seed upgrade that populates all frozen center fields, creates meaningful product-to-knowledge links, guarantees a standard BOM for every solution, removes dirty naming patterns, and maintains required center counts; added a repeatable server seed audit. Backend/test compile, frontend build, and diff checks passed; live audit waits for V3 deployment.
+V3-D12: Added exact product price GET/PATCH APIs and frozen tax/validity/notes fields; product and solution/BOM detail payloads omit all price keys without PRICE_VIEW; added in-context product price editing and removed the independent price page from the V3 frontend. Frontend build, backend/migration/test compile, and diff checks passed. The executable SQLite security test is staged for server execution because the Windows workspace Python runtime lacks SQLAlchemy.
 
 # CURRENT STEP
-V3-D12: Close PRICE_VIEW API and UI confidentiality.
+V3-D13: Polish the six-center UI and close responsive/state behavior.
 
 # NEXT EXACT STEP
-Implement V3-D12 locally: add exact GET/PATCH `/api/products/{id}/prices`, enforce PRICE_VIEW on reads and product-manager updates, ensure product details and solution/BOM responses omit every price key without PRICE_VIEW, remove the legacy independent price page/API path from the V3 frontend surface, add automated role-security contract tests, build/compile/check, update checkpoint, then continue to V3-D13 UI polish.
+Implement V3-D13 locally: remove unreachable legacy workbench views and legacy permission references from the frontend; align navigation/header/content density, localized statuses, spacing, interaction feedback, loading/empty/error states, responsive breakpoints and no-overlap behavior to the frozen PRD; optimize production chunking; build and statically audit colors/routes/enums, update checkpoint, then continue to V3-D14 browser E2E and deployment.
 
 # COMPLETED STEPS
+- V3-D12: Added exact product price APIs, frozen price metadata, PRICE_VIEW omission for product and BOM payloads, same-page price maintenance, migration `a2c63a4f5798`, and removed independent price UI.
 - V3-D11: Added idempotent semantic V3 seed upgrade and server audit for all minimum counts, 66+ meaningful relationships, per-solution BOMs, frozen fields, and zero dirty naming patterns.
 - V3-D10: Completed generic bidirectional relationships, frozen metadata, searchable relation Drawer, add/remove APIs, cross-center navigation, and migration `f1b5293e4687`.
 - V3-D9: Completed solution metadata, persistent standard BOM, PRICE_VIEW-safe BOM payloads, product-manager BOM editor, and migration `e0a4182d3576`.
@@ -85,6 +86,7 @@ Implement V3-D12 locally: add exact GET/PATCH `/api/products/{id}/prices`, enfor
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D12 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration/security-test compile and `git diff --check` passed; executable security assertions are pending server runtime dependencies.
 - V3-D11 backend/test compile, frontend `pnpm build` (1,443 modules), and `git diff --check` passed; the live `v3_seed_audit.py` is staged for execution immediately after migration/deployment.
 - V3-D10 frontend `pnpm build` passed with 1,443 modules transformed; backend/migration compile and `git diff --check` passed; POST/DELETE relation routes and bidirectional serializers were source-verified.
 - V3-D9 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed; source checks verified BOM price fields are added only inside the PRICE_VIEW branch.
@@ -151,6 +153,7 @@ Implement V3-D12 locally: add exact GET/PATCH `/api/products/{id}/prices`, enfor
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
+- V3-D12 local execution of `tests/v3_price_security.py` could not start because both available Windows Python runtimes lack the installed SQLAlchemy dependency; the test itself compiles and must run inside the API image after deployment.
 - External `http://10.1.2.1:18080/` is blocked by firewall; port 443 is used as the temporary formal entry.
 - HTTP `HEAD /` returns 405 because the static catch-all supports GET; GET root passed.
 - Final Dify console re-login probe returned HTTP 401 `Invalid encrypted data` because Dify 1.16.1 requires client-side public-key encryption for the password field. This did not invalidate the previously passed Dify provider/application invocation or current healthy Dify runtime; no credential or runtime changes were made during the pause checkpoint.

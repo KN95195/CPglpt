@@ -39,6 +39,7 @@ class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str
 class SolutionBomItemIn(BaseModel): product_id:int;quantity:int=Field(default=1,ge=1,le=10000);unit:str='台';purpose:str='';requirement_level:str='REQUIRED';recommendation_reason:str=''
 class SolutionBomIn(BaseModel): items:list[SolutionBomItemIn]
 class RelationIn(BaseModel): source_type:str;source_id:int;target_type:str;target_id:int;metadata:dict[str,str|int|bool]={}
+class ProductPricePatch(BaseModel): reference_price:float=Field(ge=0);currency:str='CNY';tax_included:bool=True;tax_rate:float=Field(default=13,ge=0,le=100);valid_until:datetime|None=None;notes:str=''
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
 class ProjectPatch(BaseModel): name:str|None=None;customer:str|None=None;region:str|None=None;scene_id:int|None=None;requirements_json:dict|None=None;bom_json:list|None=None
@@ -224,8 +225,23 @@ def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE
  result=product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'relations':relation_payload('products',pid,db)}
  if 'PRICE_VIEW' in permission_codes(u):
   price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid))
-  result['price']={'referencePrice':float(price.reference_price),'currency':price.currency} if price else None
+  result['price']={'referencePrice':float(price.reference_price),'currency':price.currency,'taxIncluded':price.tax_included,'taxRate':float(price.tax_rate),'validUntil':price.valid_until.isoformat() if price.valid_until else None,'notes':price.notes} if price else None
  return result
+@app.get('/api/products/{pid}/prices')
+def product_price(pid:int,db:Session=Depends(session),u:User=Depends(permit('PRICE_VIEW'))):
+ if not db.get(Product,pid):raise HTTPException(404,'产品不存在')
+ price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid))
+ if not price:return None
+ return {'referencePrice':float(price.reference_price),'currency':price.currency,'taxIncluded':price.tax_included,'taxRate':float(price.tax_rate),'validUntil':price.valid_until.isoformat() if price.valid_until else None,'notes':price.notes}
+@app.patch('/api/products/{pid}/prices')
+def update_product_price(pid:int,x:ProductPricePatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ if not db.get(Product,pid):raise HTTPException(404,'产品不存在')
+ price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid));values=x.model_dump()
+ if price:
+  for key,value in values.items():setattr(price,key,value)
+ else:price=ProductPrice(product_id=pid,cost_price=0,**values);db.add(price)
+ audit(db,u,'UPDATE','product_price',pid,x.model_dump(mode='json'));db.commit();db.refresh(price)
+ return {'referencePrice':float(price.reference_price),'currency':price.currency,'taxIncluded':price.tax_included,'taxRate':float(price.tax_rate),'validUntil':price.valid_until.isoformat() if price.valid_until else None,'notes':price.notes}
 @app.post('/api/admin/products',status_code=201)
 def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p)
