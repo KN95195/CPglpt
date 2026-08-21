@@ -1,22 +1,24 @@
 # FINAL OBJECTIVE
-Deliver the independent formal 海智产品中心 at `/opt/haizhi-product-hub` and reach `READY FOR BUSINESS ACCEPTANCE` only after all Gate A/B/C/D requirements and business-loop tests pass. Preserve legacy Python 2.7/SQLite service at port 80 unchanged as `LEGACY_DEMO_REFERENCE`.
+Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-External product/UI review checkpoint. Development, feature expansion, seed changes, and UI changes are paused; the formal test version remains running for manual review.
+V3.0 second-round remediation, D2 unified six-center list components.
 
 # CURRENT BUSINESS LOOP
-WAITING_FOR_PRODUCT_UI_REVIEW. Preserve the current formal test version and its data/runtime unchanged until external review feedback is received.
+V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-D04a-partial: Final checkpoint regression passed four live business suites, document/tender/training cleanup flow, embedding/RAG, governed model discovery, local LLM inference, Dify setup health, Moodle gateway access, and formal runtime health. Work then paused for external product/UI review before final responsive-browser closure.
+V3-D1: Consolidated six-center authorization to `KNOWLEDGE_VIEW`, `KNOWLEDGE_MANAGE`, and `PRICE_VIEW`; added the migration mapping existing roles; removed legacy primary navigation; renamed 模型能力中心; and registered all twelve frozen list/detail routes. Frontend production build, backend compile, and diff checks passed.
 
 # CURRENT STEP
-PAUSED FOR PRODUCT/UI REVIEW. No development or runtime/data changes are authorized while this checkpoint is active.
+V3-D2: Build the shared six-center list-page component system.
 
 # NEXT EXACT STEP
-WAITING_FOR_PRODUCT_UI_REVIEW
+Implement V3-D2 locally: extract a shared enterprise knowledge-center list shell with center-specific columns/cards, search and filters, card/list view toggle, loading/empty/error states, responsive behavior, and `KNOWLEDGE_MANAGE` actions; connect all six list routes to real APIs; build/test, update checkpoint, then continue to V3-D3 shared detail framework.
 
 # COMPLETED STEPS
+- V3-D1: Added the frozen three-permission model, role migration `e4f8a2c7d910`, six-center navigation, 模型能力中心 API alias, and all twelve Vue Router routes; frontend build and backend compile passed.
+- V3-D0: Read the frozen V3.0 PRD in full, inspected all nine embedded UI references, created a clean baseline commit, and opened `feature/knowledge-centers-v3`; formal API 3.20 remained untouched.
 - A01: Created independent formal project directory `/opt/haizhi-product-hub`; legacy `/opt/haizhi-product-center` and systemd service left unchanged.
 - A02: Started isolated PostgreSQL container `haizhi-hub-postgres` on network `haizhi-hub-net` with named volume `haizhi_hub_pgdata`.
 - A03: Built and deployed FastAPI service; health and seeded PostgreSQL product records verified.
@@ -73,6 +75,7 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D1 frontend `pnpm build` passed with 1,430 modules transformed; backend `python -m compileall app migrations` passed; `git diff --check` passed.
 - `GET /api/health` returned `{"status":"ok","version":"1.0.0","runtime":"fastapi-postgresql"}` before the API recreation.
 - PostgreSQL contained 15 seeded products.
 - `sales` product access passed and price endpoint returned 403.
@@ -180,13 +183,12 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
-- Local parent repository branch: `master`.
-- Local parent repository commit: `UNBORN` (no `HEAD` commit exists).
+- Local project branch: `feature/knowledge-centers-v3`.
+- Local project baseline commit: `1f27d71496a17eea06344b45cbefdec81d43e6d5`.
 
 # UNCOMMITTED CODE
-- The complete local `haizhi-product-hub` directory is untracked in the parent repository and safely present on disk, including the updated `CODEX_CHECKPOINT.md`.
-- The formal server deployment is also not Git-managed; its deployed source/artifacts remain in `/opt/haizhi-product-hub` and running images remain unchanged.
-- No code, database, seed, or runtime changes are pending from the pause action itself; only this checkpoint record was updated.
+- The local project is now Git-managed. At V3-D0 completion only `CODEX_CHECKPOINT.md` differs from the clean baseline commit; the change records the active V3 execution state.
+- The formal server deployment remains artifact/image-managed at `/opt/haizhi-product-hub`; no V3 source or runtime has been deployed yet.
 
 # DIFY STATUS
 - PASS: Dify 1.16.1 core services are healthy; setup is finished; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; chat app invocation reached the governed gateway and returned non-empty content; signature verification is restored to `true`.

@@ -200,29 +200,29 @@ def me(u:User=Depends(user)):return {'username':u.username,'displayName':u.displ
 def dashboard(u:User=Depends(user),db:Session=Depends(session)):
  return {'metrics':{'products':db.scalar(select(func.count(Product.id))),'algorithms':db.scalar(select(func.count(Algorithm.id))),'capabilities':db.scalar(select(func.count(Capability.id))),'scenes':db.scalar(select(func.count(Scene.id))),'solutions':db.scalar(select(func.count(Solution.id))),'projects':db.scalar(select(func.count(Project.id)))}}
 @app.get('/api/products')
-def products(q:str='',db:Session=Depends(session),u:User=Depends(permit('PRODUCT_VIEW'))):
+def products(q:str='',db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  st=select(Product).order_by(Product.updated_at.desc())
  if q:st=st.where(Product.name.ilike('%'+q+'%')|Product.model_code.ilike('%'+q+'%'))
  return [dto(x) for x in db.scalars(st)]
 @app.get('/api/product-categories')
-def product_categories(db:Session=Depends(session),u:User=Depends(permit('PRODUCT_VIEW'))):
+def product_categories(db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  return [{'id':x.id,'name':x.name} for x in db.scalars(select(ProductCategory).order_by(ProductCategory.name))]
 @app.get('/api/products/{pid}')
-def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('PRODUCT_VIEW'))):
+def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  p=db.get(Product,pid)
  if not p:raise HTTPException(404,'产品不存在')
  return product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'parameters':{'基础参数':'工业级水域感知终端','接口':'ONVIF / GB28181','环境':'-20C 至 60C'}}
 @app.post('/api/admin/products',status_code=201)
-def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('PRODUCT_EDIT'))):
+def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p)
 @app.patch('/api/admin/products/{pid}')
-def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Depends(permit('PRODUCT_EDIT'))):
+def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
  for k,v in x.model_dump(exclude_none=True).items(): setattr(p,k,v)
  p.owner=u.display_name;audit(db,u,'UPDATE','product',p.id,x.model_dump(exclude_none=True));db.commit();db.refresh(p);return dto(p)
 @app.delete('/api/admin/products/{pid}',status_code=204)
-def delete_product(pid:int,db:Session=Depends(session),u:User=Depends(permit('PRODUCT_EDIT'))):
+def delete_product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
  db.query(ProductCapability).filter(ProductCapability.product_id==pid).delete();audit(db,u,'DELETE','product',pid,{'name':p.name,'modelCode':p.model_code});db.delete(p);db.commit()
@@ -231,15 +231,15 @@ def audit_logs(limit:int=100,db:Session=Depends(session),u:User=Depends(permit('
  rows=db.scalars(select(AuditLog).order_by(AuditLog.created_at.desc()).limit(min(max(limit,1),500)))
  return [{'id':x.id,'userId':x.user_id,'action':x.action,'resourceType':x.resource_type,'resourceId':x.resource_id,'detail':json.loads(x.detail_json),'createdAt':x.created_at.isoformat()} for x in rows]
 @app.get('/api/products/{pid}/capabilities')
-def product_capabilities(pid:int,db:Session=Depends(session),u:User=Depends(permit('PRODUCT_VIEW'))):
+def product_capabilities(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  if not db.get(Product,pid): raise HTTPException(404,'产品不存在')
  return product_detail_dto(db.get(Product,pid),db)['capabilities']
 @app.get('/api/catalog/{kind}')
 def catalog(kind:str,db:Session=Depends(session),u:User=Depends(user)):
- meta={'capabilities':(Capability,'CAPABILITY_VIEW'),'algorithms':(Algorithm,'ALGORITHM_VIEW'),'software':(Software,'SOFTWARE_VIEW'),'scenes':(Scene,'SCENE_VIEW'),'solutions':(Solution,'SOLUTION_VIEW')}.get(kind)
+ meta={'model-capabilities':Capability,'capabilities':Capability,'algorithms':Algorithm,'software':Software,'scenes':Scene,'solutions':Solution}.get(kind)
  if not meta:raise HTTPException(404,'模块不存在')
- m,permission=meta
- if permission not in permission_codes(u):raise HTTPException(403,'缺少权限：'+permission)
+ if 'KNOWLEDGE_VIEW' not in permission_codes(u):raise HTTPException(403,'缺少权限：KNOWLEDGE_VIEW')
+ m=meta
  rows=[]
  for x in db.scalars(select(m).order_by(m.updated_at.desc())):
   row={'id':x.id,'name':x.name,'summary':getattr(x,'summary',getattr(x,'description','')),'status':getattr(x,'status','SUPPORTED'),'updatedAt':x.updated_at.isoformat()}
@@ -249,34 +249,34 @@ def catalog(kind:str,db:Session=Depends(session),u:User=Depends(user)):
   rows.append(row)
  return rows
 @app.get('/api/scenes/{sid}')
-def scene_detail(sid:int,db:Session=Depends(session),u:User=Depends(permit('SCENE_VIEW'))):
+def scene_detail(sid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  rec=db.get(Scene,sid)
  if not rec:raise HTTPException(404,'场景不存在')
  solutions=db.scalars(select(Solution).where(Solution.scene_id==sid).order_by(Solution.tier,Solution.name)).all()
  return {'id':rec.id,'name':rec.name,'summary':rec.summary,'painPoints':rec.pain_points,'status':rec.status,'solutions':[{'id':x.id,'name':x.name,'tier':x.tier,'summary':x.summary} for x in solutions]}
 def catalog_model(kind):
- meta={'capabilities':(Capability,'CAPABILITY_EDIT'),'algorithms':(Algorithm,'ALGORITHM_EDIT'),'software':(Software,'SOFTWARE_EDIT'),'scenes':(Scene,'SCENE_EDIT'),'solutions':(Solution,'SOLUTION_EDIT')}.get(kind)
+ meta={'model-capabilities':Capability,'capabilities':Capability,'algorithms':Algorithm,'software':Software,'scenes':Scene,'solutions':Solution}.get(kind)
  if not meta:raise HTTPException(404,'模块不存在')
  return meta
 def catalog_values(kind,x):
  d=x.model_dump(exclude_none=True)
  if 'summary' in d:
   summary=d.pop('summary')
-  if kind in {'capabilities','algorithms','software'}:d['description']=summary
+  if kind in {'model-capabilities','capabilities','algorithms','software'}:d['description']=summary
   else:d['summary']=summary
- allowed={'capabilities':{'name','description','category','status'},'algorithms':{'name','description','version','category','status'},'software':{'name','description','version','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
+ allowed={'model-capabilities':{'name','description','category','status'},'capabilities':{'name','description','category','status'},'algorithms':{'name','description','version','category','status'},'software':{'name','description','version','status'},'scenes':{'name','summary','status'},'solutions':{'name','summary','scene_id','tier'}}[kind]
  return {k:v for k,v in d.items() if k in allowed}
 @app.post('/api/admin/catalog/{kind}',status_code=201)
 def create_catalog(kind:str,x:CatalogIn,db:Session=Depends(session),u:User=Depends(user)):
- m,permission=catalog_model(kind)
- if permission not in permission_codes(u):raise HTTPException(403,'缺少权限：'+permission)
+ m=catalog_model(kind)
+ if 'KNOWLEDGE_MANAGE' not in permission_codes(u):raise HTTPException(403,'缺少权限：KNOWLEDGE_MANAGE')
  values=catalog_values(kind,x)
  if kind=='solutions' and not values.get('scene_id'):raise HTTPException(422,'方案必须关联场景')
  rec=m(**values);db.add(rec);db.flush();audit(db,u,'CREATE',kind,rec.id,values);db.commit();db.refresh(rec);return {'id':rec.id,'name':rec.name}
 @app.patch('/api/admin/catalog/{kind}/{rid}')
 def update_catalog(kind:str,rid:int,x:CatalogPatch,db:Session=Depends(session),u:User=Depends(user)):
- m,permission=catalog_model(kind)
- if permission not in permission_codes(u):raise HTTPException(403,'缺少权限：'+permission)
+ m=catalog_model(kind)
+ if 'KNOWLEDGE_MANAGE' not in permission_codes(u):raise HTTPException(403,'缺少权限：KNOWLEDGE_MANAGE')
  rec=db.get(m,rid)
  if not rec:raise HTTPException(404,'记录不存在')
  values=catalog_values(kind,x)
@@ -284,11 +284,11 @@ def update_catalog(kind:str,rid:int,x:CatalogPatch,db:Session=Depends(session),u
  audit(db,u,'UPDATE',kind,rid,values);db.commit();return {'id':rec.id,'name':rec.name}
 @app.delete('/api/admin/catalog/{kind}/{rid}',status_code=204)
 def delete_catalog(kind:str,rid:int,db:Session=Depends(session),u:User=Depends(user)):
- m,permission=catalog_model(kind)
- if permission not in permission_codes(u):raise HTTPException(403,'缺少权限：'+permission)
+ m=catalog_model(kind)
+ if 'KNOWLEDGE_MANAGE' not in permission_codes(u):raise HTTPException(403,'缺少权限：KNOWLEDGE_MANAGE')
  rec=db.get(m,rid)
  if not rec:raise HTTPException(404,'记录不存在')
- if kind=='capabilities':db.query(ProductCapability).filter(ProductCapability.capability_id==rid).delete()
+ if kind in {'model-capabilities','capabilities'}:db.query(ProductCapability).filter(ProductCapability.capability_id==rid).delete()
  audit(db,u,'DELETE',kind,rid,{'name':rec.name});db.delete(rec)
  try:db.commit()
  except Exception as exc:db.rollback();raise HTTPException(409,'记录仍被业务数据引用') from exc

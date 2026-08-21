@@ -5,4 +5,5 @@ import 'element-plus/dist/index.css';
 import './styles/tokens.scss';
 import './styles/app.scss';
 import App from './App.vue';
-createApp(App).use(createPinia()).use(ElementPlus).mount('#app');
+import router from './router';
+createApp(App).use(createPinia()).use(router).use(ElementPlus).mount('#app');
