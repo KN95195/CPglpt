@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D4 product center full rebuild.
+V3.0 second-round remediation, D5 software center completion.
 
 # CURRENT BUSINESS LOOP
 V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
 
 # LAST SUCCESSFUL STEP
-V3-D3: Added exact list/detail APIs for all five non-product centers and a shared responsive `KnowledgeDetail` shell covering hero metadata, relationship navigation, read-only/manage states, loading/error/retry, maintenance metadata, and permission-gated price sections. Frontend build and backend compile passed.
+V3-D4: Extended the product model/API for frozen product type, primary image, dynamic type-specific fields, embedded price omission, and richer relationship data; implemented the create-to-detail-edit workflow and full same-page product editing with dynamic field recommendations. Frontend build, backend compile, migration compile, and diff checks passed.
 
 # CURRENT STEP
-V3-D4: Rebuild the product center against the frozen product fields and workflow.
+V3-D5: Complete the software center frozen fields and workflows.
 
 # NEXT EXACT STEP
-Implement V3-D4 locally: extend the product schema/API for frozen product type, main model, classification, one-line introduction, sales status, primary image, type-specific dynamic fields, embedded price and relationship sections; implement the six-field create modal that redirects into same-page detail editing; enforce read-only user versus product-manager behavior and PRICE_VIEW omission; add migration/tests, build, update checkpoint, then continue to V3-D5 software center.
+Implement V3-D5 locally: extend software records with frozen software type, vendor, current version, deployment mode, supported operating systems, lifecycle status, description, and real product/algorithm/model-capability relations; complete create, same-page edit, delete, detail, search/filter, read-only/manage states, API tests/build, update checkpoint, then continue to V3-D6 algorithm center.
 
 # COMPLETED STEPS
+- V3-D4: Completed the frozen product create and detail workflow, type-aware dynamic fields, main-image field, embedded PRICE_VIEW-safe price response, and migration `f5b9c3d8e021`.
 - V3-D3: Added exact APIs and a shared responsive detail framework for all six center routes, including real relationship links and permission-aware management/price sections.
 - V3-D2: Connected all six centers to the shared enterprise list shell with card/list modes, filters, summary counts, responsive layouts, and complete loading/empty/error/permission states.
 - V3-D1: Added the frozen three-permission model, role migration `e4f8a2c7d910`, six-center navigation, 模型能力中心 API alias, and all twelve Vue Router routes; frontend build and backend compile passed.
@@ -77,6 +78,7 @@ Implement V3-D4 locally: extend the product schema/API for frozen product type, 
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- V3-D4 frontend `pnpm build` passed with 1,440 modules transformed; backend/migration compile and `git diff --check` passed; source checks verified the new product schema fields and conditional PRICE_VIEW response branch.
 - V3-D3 frontend `pnpm build` passed with 1,437 modules transformed; backend `python -m compileall app migrations` and `git diff --check` passed; all exact non-product center list/detail route declarations were verified.
 - V3-D2 frontend `pnpm build` passed with 1,434 modules transformed and production assets emitted.
 - V3-D1 frontend `pnpm build` passed with 1,430 modules transformed; backend `python -m compileall app migrations` passed; `git diff --check` passed.

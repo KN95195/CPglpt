@@ -32,8 +32,8 @@ async def security_headers(request:Request,call_next):
   response.headers['Cache-Control']='no-store'
  return response
 class Login(BaseModel): username:str;password:str
-class ProductIn(BaseModel): name:str=Field(min_length=2);model_code:str;category_id:int;summary:str='';status:str='ON_SALE'
-class ProductPatch(BaseModel): name:str|None=None;summary:str|None=None;status:str|None=None;data_status:str|None=None
+class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
+class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;data_status:str|None=None
 class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';version:str='v1.0';category:str='通用';scene_id:int|None=None;tier:str='标准型';status:str='SUPPORTED'
 class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;version:str|None=None;category:str|None=None;scene_id:int|None=None;tier:str|None=None;status:str|None=None
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
@@ -68,10 +68,10 @@ def gateway_client(c:HTTPAuthorizationCredentials|None=Depends(security),db:Sess
   if not service_user: raise HTTPException(503,'gateway service account unavailable')
   return service_user
  return user(c,db)
-def dto(p):return {'id':p.id,'name':p.name,'modelCode':p.model_code,'categoryId':p.category_id,'category':p.category.name,'summary':p.summary,'status':p.status,'dataStatus':p.data_status,'updatedAt':p.updated_at.isoformat()}
+def dto(p):return {'id':p.id,'name':p.name,'productType':p.product_type,'modelCode':p.model_code,'categoryId':p.category_id,'category':p.category.name,'summary':p.summary,'status':p.status,'mainImage':p.main_image,'dataStatus':p.data_status,'updatedAt':p.updated_at.isoformat()}
 def product_detail_dto(p,db):
  caps=db.scalars(select(Capability).join(ProductCapability,Capability.id==ProductCapability.capability_id).where(ProductCapability.product_id==p.id)).all()
- return dto(p)|{'capabilities':[{'id':c.id,'name':c.name,'category':c.category} for c in caps]}
+ return dto(p)|{'dynamicFields':json.loads(p.dynamic_fields_json or '{}'),'capabilities':[{'id':c.id,'type':'model-capabilities','name':c.name,'category':c.category,'meta':c.category,'summary':c.description} for c in caps]}
 def audit(db,u,action,resource_type,resource_id,detail=None):
  db.add(AuditLog(user_id=u.id,action=action,resource_type=resource_type,resource_id=str(resource_id),detail_json=json.dumps(detail or {},ensure_ascii=False)))
 def normalize_chat_payload(payload):
@@ -211,7 +211,11 @@ def product_categories(db:Session=Depends(session),u:User=Depends(permit('KNOWLE
 def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  p=db.get(Product,pid)
  if not p:raise HTTPException(404,'产品不存在')
- return product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'parameters':{'基础参数':'工业级水域感知终端','接口':'ONVIF / GB28181','环境':'-20C 至 60C'}}
+ result=product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat()}
+ if 'PRICE_VIEW' in permission_codes(u):
+  price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid))
+  result['price']={'referencePrice':float(price.reference_price),'currency':price.currency} if price else None
+ return result
 @app.post('/api/admin/products',status_code=201)
 def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p)
@@ -219,8 +223,10 @@ def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit
 def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
- for k,v in x.model_dump(exclude_none=True).items(): setattr(p,k,v)
- p.owner=u.display_name;audit(db,u,'UPDATE','product',p.id,x.model_dump(exclude_none=True));db.commit();db.refresh(p);return dto(p)
+ values=x.model_dump(exclude_none=True)
+ if 'dynamic_fields' in values:values['dynamic_fields_json']=json.dumps(values.pop('dynamic_fields'),ensure_ascii=False)
+ for k,v in values.items(): setattr(p,k,v)
+ p.owner=u.display_name;audit(db,u,'UPDATE','product',p.id,values);db.commit();db.refresh(p);return product_detail_dto(p,db)
 @app.delete('/api/admin/products/{pid}',status_code=204)
 def delete_product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
