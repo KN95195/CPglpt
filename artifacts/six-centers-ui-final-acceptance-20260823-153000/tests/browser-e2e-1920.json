@@ -1,0 +1,143 @@
+{
+  "results": [
+    {
+      "center": "products",
+      "list": {
+        "active": "产品中心",
+        "h1": "产品中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/products"
+      },
+      "detail": {
+        "active": "产品中心",
+        "h1": "海智智能分析节点",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/products/28"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "产品中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/products"
+      }
+    },
+    {
+      "center": "software",
+      "list": {
+        "active": "软件中心",
+        "h1": "软件中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/software"
+      },
+      "detail": {
+        "active": "软件中心",
+        "h1": "多源态势融合平台",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/software/3"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "软件中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/software"
+      }
+    },
+    {
+      "center": "algorithms",
+      "list": {
+        "active": "算法中心",
+        "h1": "算法中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/algorithms"
+      },
+      "detail": {
+        "active": "算法中心",
+        "h1": "视频结构化",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/algorithms/10"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "算法中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/algorithms"
+      }
+    },
+    {
+      "center": "model-capabilities",
+      "list": {
+        "active": "模型能力中心",
+        "h1": "模型能力中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/model-capabilities"
+      },
+      "detail": {
+        "active": "模型能力中心",
+        "h1": "多源态势融合",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/model-capabilities/15"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "模型能力中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/model-capabilities"
+      }
+    },
+    {
+      "center": "scenes",
+      "list": {
+        "active": "场景中心",
+        "h1": "场景中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/scenes"
+      },
+      "detail": {
+        "active": "场景中心",
+        "h1": "近海风场",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/scenes/5"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "场景中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/scenes"
+      }
+    },
+    {
+      "center": "solutions",
+      "list": {
+        "active": "方案中心",
+        "h1": "方案中心",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/solutions"
+      },
+      "detail": {
+        "active": "方案中心",
+        "h1": "桥梁防撞增强方案",
+        "overflow": false,
+        "title": "海智产品中心",
+        "url": "http://10.1.2.1:443/solutions/6"
+      },
+      "editOpened": true,
+      "back": {
+        "h1": "方案中心",
+        "overflow": false,
+        "url": "http://10.1.2.1:443/solutions"
+      }
+    }
+  ],
+  "logs": []
+}
