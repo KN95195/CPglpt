@@ -6,7 +6,7 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -524,28 +524,30 @@ def relation_rows(kind: str, record_id: int, db: Session):
 
 
 def software_dto(record: Software, db: Session, detail=False):
-    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'softwareType': record.software_type, 'vendor': record.vendor, 'deploymentMode': record.deployment_mode, 'supportedOs': json_value(record.supported_os_json, []), 'summary': record.description, 'logo': record.logo, 'status': record.status, 'updatedAt': record.updated_at.isoformat()}
+    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'softwareType': record.software_type, 'vendor': record.vendor, 'deploymentMode': record.deployment_mode, 'supportedOs': json_value(record.supported_os_json, []), 'summary': record.description, 'logo': record.logo, 'status': record.status, 'updatedAt': record.updated_at.isoformat(), 'moduleCount': len(record.modules), 'featureCount': sum(len(x.features) for x in record.modules), 'primaryScreenshot': record.screenshots[0].image if record.screenshots else record.logo}
     if detail:
         result |= {'description': record.detail_description, 'databases': json_value(record.database_json, []), 'protocols': json_value(record.protocols_json, []), 'boundaries': json_value(record.boundaries_json, []), 'screenshots': [media_dto(x) for x in record.screenshots], 'versions': [{'id': x.id, 'version': x.version, 'releasedAt': x.released_at.isoformat() if x.released_at else None, 'summary': x.summary} for x in record.versions], 'modules': [{'id': x.id, 'name': x.name, 'description': x.description, 'icon': x.icon, 'sortOrder': x.sort_order, 'features': [{'id': f.id, 'name': f.name, 'description': f.description, 'sortOrder': f.sort_order} for f in x.features]} for x in record.modules], 'relations': relation_rows('software', record.id, db)}
     return result
 
 
 def algorithm_dto(record: Algorithm, db: Session, detail=False):
-    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'category': record.category, 'summary': record.description, 'status': record.status, 'updatedAt': record.updated_at.isoformat()}
+    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'category': record.category, 'summary': record.description, 'status': record.status, 'inputSummary': record.input_summary, 'outputSummary': record.output_summary, 'metrics': [{'id': x.id, 'name': x.name, 'value': x.value, 'unit': x.unit, 'highlight': x.highlight} for x in record.metrics if x.highlight][:3], 'updatedAt': record.updated_at.isoformat()}
     if detail:
         result |= {'principle': record.principle, 'inputSummary': record.input_summary, 'outputSummary': record.output_summary, 'parameters': [{'id': x.id, 'name': x.name, 'value': x.value, 'unit': x.unit, 'group': x.group_name, 'sortOrder': x.sort_order} for x in record.parameters], 'metrics': [{'id': x.id, 'name': x.name, 'value': x.value, 'unit': x.unit, 'group': x.group_name, 'condition': x.condition, 'source': x.source, 'highlight': x.highlight, 'sortOrder': x.sort_order} for x in record.metrics], 'boundaries': json_value(record.boundaries_json, []), 'relations': relation_rows('algorithms', record.id, db)}
     return result
 
 
 def model_dto(record: Capability, db: Session, detail=False):
-    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'category': record.category, 'modelType': record.model_type, 'taskType': record.task_type, 'functionType': record.function_type, 'summary': record.description, 'status': record.status, 'updatedAt': record.updated_at.isoformat()}
+    result = {'id': record.id, 'name': record.name, 'code': record.code, 'version': record.version, 'category': record.category, 'modelType': record.model_type, 'taskType': record.task_type, 'functionType': record.function_type, 'summary': record.description, 'status': record.status, 'metrics': [{'id': x.id, 'name': x.name, 'value': x.value, 'unit': x.unit, 'highlight': x.highlight} for x in record.metrics if x.highlight][:3], 'updatedAt': record.updated_at.isoformat()}
     if detail:
         result |= {'metrics': [{'id': x.id, 'name': x.name, 'value': x.value, 'unit': x.unit, 'group': x.group_name, 'condition': x.condition, 'source': x.source, 'dataset': x.dataset, 'sampleCount': x.sample_count, 'inputResolution': x.input_resolution, 'hardware': x.hardware, 'runtime': x.runtime, 'testedAt': x.tested_at.isoformat() if x.tested_at else None, 'highlight': x.highlight, 'sortOrder': x.sort_order} for x in record.metrics], 'inputDefinitions': [{'id': x.id, 'name': x.name, 'dataType': x.data_type, 'required': x.required, 'description': x.description, 'example': x.example, 'sortOrder': x.sort_order} for x in record.inputs], 'outputDefinitions': [{'id': x.id, 'name': x.name, 'dataType': x.data_type, 'description': x.description, 'example': x.example, 'sortOrder': x.sort_order} for x in record.outputs], 'deploymentRequirements': json_value(record.deployment_requirements_json, {}), 'useConditions': json_value(record.use_conditions_json, []), 'boundaries': json_value(record.boundaries_json, []), 'relations': relation_rows('model-capabilities', record.id, db)}
     return result
 
 
 def scene_dto(record: Scene, db: Session, detail=False):
-    result = {'id': record.id, 'name': record.name, 'category': record.category, 'summary': record.summary, 'coverImage': record.cover_image, 'status': record.status, 'tags': json_value(record.tags_json, []), 'updatedAt': record.updated_at.isoformat()}
+    relations = relation_rows('scenes', record.id, db)
+    relation_counts = {kind: sum(1 for item in relations if item['type'] == kind) for kind in ('products', 'model-capabilities', 'solutions')}
+    result = {'id': record.id, 'name': record.name, 'category': record.category, 'summary': record.summary, 'coverImage': record.cover_image, 'status': record.status, 'tags': json_value(record.tags_json, []), 'relationCounts': relation_counts, 'updatedAt': record.updated_at.isoformat()}
     if detail:
         result |= {'conditions': json_value(record.conditions_json, []), 'painPoints': [{'id': x.id, 'title': x.title, 'description': x.description, 'icon': x.icon, 'sortOrder': x.sort_order} for x in record.pains], 'goals': [{'id': x.id, 'title': x.title, 'description': x.description, 'icon': x.icon, 'sortOrder': x.sort_order} for x in record.goals], 'process': [{'id': x.id, 'nodeTitle': x.node_title, 'nodeDescription': x.node_description, 'icon': x.icon, 'sortOrder': x.sort_order} for x in record.process_steps], 'coreCapabilitySummary': record.core_capability_summary, 'relations': relation_rows('scenes', record.id, db)}
     return result
@@ -570,7 +572,7 @@ def bom_dto(solution_id: int, db: Session, user: User):
 
 
 def solution_dto(record: Solution, db: Session, user: User, detail=False):
-    result = {'id': record.id, 'name': record.name, 'code': record.code, 'category': record.category, 'sceneId': record.scene_id, 'scene': record.scene.name, 'tier': record.tier, 'status': record.status, 'summary': record.summary, 'updatedAt': record.updated_at.isoformat()}
+    result = {'id': record.id, 'name': record.name, 'code': record.code, 'category': record.category, 'sceneId': record.scene_id, 'scene': record.scene.name, 'tier': record.tier, 'status': record.status, 'summary': record.summary, 'coverageScope': record.coverage_scope, 'coverageCount': len(record.capability_coverage), 'architectureCount': len(record.architecture), 'bomCount': db.scalar(select(func.count(SolutionBomItem.id)).where(SolutionBomItem.solution_id == record.id)) or 0, 'updatedAt': record.updated_at.isoformat()}
     if detail:
         result |= {'targetDescription': record.target_description, 'coverageScope': record.coverage_scope, 'implementationNotes': record.implementation_notes, 'architecture': [{'id': x.id, 'layer': x.layer, 'name': x.name, 'description': x.description, 'relationType': x.relation_type, 'relationId': x.relation_id, 'sortOrder': x.sort_order} for x in record.architecture], 'capabilityCoverage': [{'id': x.id, 'capabilityName': x.capability_name, 'status': x.status, 'implementation': x.implementation, 'relationObjects': json_value(x.relation_objects_json, []), 'notes': x.notes, 'sortOrder': x.sort_order} for x in record.capability_coverage], 'relations': relation_rows('solutions', record.id, db), 'bom': bom_dto(record.id, db, user)}
     return result

@@ -218,7 +218,7 @@ def login(x:Login,request:Request,db:Session=Depends(session)):
 def me(u:User=Depends(user)):return {'username':u.username,'displayName':u.display_name,'role':u.role.code,'permissions':sorted(permission_codes(u))}
 @app.get('/api/dashboard')
 def dashboard(u:User=Depends(user),db:Session=Depends(session)):
- return {'metrics':{'products':db.scalar(select(func.count(Product.id))),'algorithms':db.scalar(select(func.count(Algorithm.id))),'capabilities':db.scalar(select(func.count(Capability.id))),'scenes':db.scalar(select(func.count(Scene.id))),'solutions':db.scalar(select(func.count(Solution.id))),'projects':db.scalar(select(func.count(Project.id)))}}
+ return {'metrics':{'products':db.scalar(select(func.count(Product.id))),'software':db.scalar(select(func.count(Software.id))),'algorithms':db.scalar(select(func.count(Algorithm.id))),'capabilities':db.scalar(select(func.count(Capability.id))),'scenes':db.scalar(select(func.count(Scene.id))),'solutions':db.scalar(select(func.count(Solution.id))),'projects':db.scalar(select(func.count(Project.id)))}}
 @app.get('/api/products')
 def products(q:str='',db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  st=select(Product).order_by(Product.updated_at.desc())
