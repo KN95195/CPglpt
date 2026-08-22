@@ -2,21 +2,40 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-V3.0 second-round remediation, D14 deployment and browser E2E regression.
+SIX_CENTERS_PRODUCTION_IMPLEMENTATION
 
 # CURRENT BUSINESS LOOP
-V3 frozen product/UI implementation: ordinary users browse six centers read-only; product managers manage knowledge in the same pages; PRICE_VIEW controls all price fields.
+R3 final freeze is approved as the implementation source of truth. Execute CHANGE -> BUILD -> TEST -> FIX -> RETEST -> CHECKPOINT -> NEXT across the six centers, then backup, deploy, production smoke, rollback verification, and final acceptance. Deferred AI/RAG/Moodle/project-workbench expansion remains out of scope.
 
 # LAST SUCCESSFUL STEP
-V3-D15-FINAL: Final formal-state recheck passed after all report-transfer cleanup: seed counts remain 15/3/10/15/5/6 with 6 BOMs, 74 relations and zero dirty records; API 4.2, Dify, Moodle DB and Moodle are healthy; temporary report/checkpoint document records are zero.
+PI-012: Packaged the final Word report, production screenshots, test evidence, and checksums; re-ran the frontend production build, Python compileall, and Git whitespace validation; preserved unrelated user-owned files; and completed the scoped production-readiness commit.
 
 # CURRENT STEP
-READY FOR PRODUCT/UI REVIEW.
+COMPLETE
 
 # NEXT EXACT STEP
-WAITING_FOR_PRODUCT_UI_REVIEW
+NONE
 
 # COMPLETED STEPS
+- PI-012: Created `artifacts/haizhi-six-centers-production-ready-20260823.zip` with SHA-256 `C720663B49AF25CBB58FE9F68CBADA405F5906AB16952C4A4107A3C68CDC035A`; included the final 10-page Word acceptance report, final test results, checksums, and production screenshots; re-ran the frontend build and Python compileall; and marked the six-center implementation production-ready.
+- PI-011: Reproduced and fixed the R3-to-legacy downgrade conflict caused by multiple relation types for one legacy relation pair; isolated downgrade to `a2c63a4f5798`, old image `4.2` health, re-upgrade to `4f6d8a2c1b90`, and recovered counts `15/3/10/15/5/6` plus 69 relations all passed. Fixed the Relation Drawer stale option list, deployed cache-safe frontend bundle `/assets/index-6JnvkW6p.js` in immutable `haizhi-hub-api:5.4-r3`, and browser-verified the correct scene object label.
+- PI-010: Passed all six list and six detail routes, 48 route/viewport checks at 1920x1080, 1600x900, 1440x900, and 1366x768 with zero overflow/error, browser console error/warn count zero, Product edit, Relation Drawer metadata edit display, and Solution BOM no-op save. Cleaned dirty product name `45` by renaming it to `海智智能分析节点` and adding model/summary without deleting the record; protected product `雷达` remained untouched.
+- PI-009: Created `/opt/haizhi-product-hub/backups/r3-predeploy-20260822-2130`, migrated formal PostgreSQL to `4f6d8a2c1b90`, deployed hardened immutable `haizhi-hub-api:5.1-r3` (`sha256:02c8daa46f92fcfd4fc39d1cfd07e0db489c6e6227a340906c2f0a58d1635afe`), retained rollback containers `haizhi-hub-api-v42-r3rollback-20260822` and `haizhi-hub-api-v50-r3rollback-20260822`, passed port-443 health, and passed `FORMAL_CRUD_PRICE_CLEANUP_PASS` without leaving temporary records.
+- PI-008: Packaged candidate (`SHA-256 1f64298e271358135760c7801fa6836de7393923ce966ce1fbb5248a8170ebaf`), built immutable API/UI image `haizhi-hub-api:5.0-r3` (`sha256:a6d33fb784e64b48113aaf93dd7f1e1e15402be99a4f28eb2f51b13aaee55d40`), restored production snapshot checksum `b04b90206bcaa3a47cdb1bced19df8286cde8742837ad78e9b2b5b0bb9686685` into isolated PostgreSQL, upgraded it from `a2c63a4f5798` to `4f6d8a2c1b90`, started hardened read-only candidate on localhost 18084, and passed health, static asset, ordinary-user write denial, PRICE_VIEW omission, and complete R3 isolated API acceptance with cleanup. Formal runtime and DB remained unchanged.
+- PI-007: Audited and removed obsolete frontend contracts/enums, verified no gradients, copied R3 visual assets into the production frontend, assigned semantic product/scene images without overwriting existing media, corrected `TIME_SERIES`, localized model/tier values, and added Software modules/version/dependency detail rendering. Frontend production build, Python compileall, and `git diff --check` pass.
+- PI-006: Added full Product identity fields, gallery/tags/features/boundaries editing, grouped typed ProductDynamicParameter management, highlight selection, main gallery rendering, type-specific quick metrics, structured feature and boundary sections, and complete read-state descriptions. Frontend production build passed.
+- PI-005: Replaced the generic non-product editor with center-specific frozen fields and normalized transformations: Software modules/features/versions/screenshots/database/protocols; Algorithm principle/input/output/parameters/metrics; Model types/task/I-O/test evidence/deployment/use conditions; Scene tags/conditions/pains/goals/process; Solution scene/tier/architecture/capability coverage. Frontend production build passed.
+- PI-004: Completed relation type selection (`SUPPORT`, `COMMERCIALIZATION`, `RECOMMENDATION`, `COMPOSITION`, `RELATED`), constrained commercialization to Product-to-Software, rendered only backend-allowed metadata per center pair, normalized concurrency values, and added relation PATCH editing. Frontend production build passed after the change.
+- PI-003: Current R3 frontend production build passed locally with `vue-tsc -b && vite build`; emitted production assets without TypeScript/Vue compilation errors. Remaining Sass import and chunk-size messages are non-blocking warnings.
+- PI-002: On isolated PostgreSQL runtime on `172.20.1.7`, passed clean zero-to-`4f6d8a2c1b90` migration, downgrade to `a2c63a4f5798`, re-upgrade, application import/route precedence, semantic seed initialization, minimum six-center counts, normalized child and relation counts, no deprecated product types, six-center CRUD, partial PATCH, reader write denial, PRICE_VIEW omission, bidirectional relations, BOM price omission, and cleanup. Final marker: `R3_ISOLATED_API_ACCEPTANCE_PASS`.
+- PI-001: Replaced `4f6d8a2c1b90` with the complete reversible R3 schema; expanded ORM models and structured DTO/API handling for Product, Software, Algorithm, ModelCapability, Scene, Solution, relations, BOM, and price security; corrected seed product enums to `HARDWARE/SOFTWARE_PRODUCT/SYSTEM_PRODUCT/ACCESSORY`; populated normalized semantic child data; added Product/Software 1:1 `COMMERCIALIZATION`; removed invented metric values in favor of explicit pending-confirmation evidence. Python compileall and `git diff --check` pass.
+- PI-000: Read the production implementation directive, current checkpoint, all R3 source-of-truth documents, the seven-sheet field dictionary, Git/runtime state, existing migrations, current API/UI, and frozen drafts. Decision: retain useful concepts but replace the unexecuted draft implementation with the complete R3 contract before migration or deployment.
+- SDR3-001: Completed SIX CENTERS DESIGN REVIEW - R3 FINAL FREEZE at `six-centers-design-review-r3-20260822-182819/` and created verified ZIP `six-centers-design-review-r3-20260822-182819.zip`. Final content: 19 Mockups, six annotated detail views, nine design/proposal documents, seven-sheet field dictionary, review index, and portable local visual assets. All package, browser, semantic, no-price, raster-size, spreadsheet-container, and ZIP integrity gates passed. Formal runtime remained untouched.
+- SDR2-001: Completed SIX CENTERS DESIGN REVIEW - REVISION ROUND 2 at `six-centers-design-review-r2-20260822-144038/`: 18 differentiated Mockups, six annotated detail views, eight design/proposal documents, updated review index, verified seven-sheet/157-row field dictionary, exact 1920x1080 raster QA, price-hidden assertions, browser console audit, and ZIP integrity verification. Formal runtime remained untouched.
+- SDFR-001: Completed SIX CENTERS DESIGN FREEZE REVIEW package at `six-centers-design-review-20260822-125211/`: 18 mockups, six annotated mockups, eight required docs, exact UI-field mapping, relation/data/API proposals, implementation proposal, review index, and seven-sheet field dictionary. Visual and structural QA passed; formal runtime remained untouched.
+- SDR-001: Completed `GENERATE_SIX_CENTERS_UI_AND_FIELD_DESIGN_FOR_REVIEW`; generated five design documents plus review index and recorded the frozen implementation draft without modifying the formal runtime.
+- PH-001: Recorded the product-hardening KEEP/REFACTOR/MIGRATE/REMOVE decision from the deployed current-state baseline; no source, schema, runtime, or data mutation occurred.
+- UI-ACCEPTANCE-EXPORT: Read the frozen V3 PRD and all nine embedded UI references; exported 46 live browser screenshots, UI/field/API/data-model/relation/seed/E2E reports, a verified 99-row field inventory workbook, and `ACCEPTANCE_INDEX.md`. Final decision remains `WAITING_FOR_EXTERNAL_UI_REVIEW`.
 - V3-D13: Replaced the shipped frontend with `AppV3.vue`, removed the legacy monolith, closed responsive layouts at desktop/tablet/mobile breakpoints, localized statuses, and split production chunks.
 - V3-D12: Added exact product price APIs, frozen price metadata, PRICE_VIEW omission for product and BOM payloads, same-page price maintenance, migration `a2c63a4f5798`, and removed independent price UI.
 - V3-D11: Added idempotent semantic V3 seed upgrade and server audit for all minimum counts, 66+ meaningful relationships, per-solution BOMs, frozen fields, and zero dirty naming patterns.
@@ -87,6 +106,26 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- PI-012 final local verification passed: `npm run build`, Python `compileall`, `git diff --check`, final ZIP integrity/checksum, and final report/artifact presence.
+- PI-001 static verification passed: Python compileall for backend application and all Alembic migrations; `git diff --check`; no deprecated `AI_PRODUCT` or `SYSTEM_SOLUTION` remains in R3 seed logic; Product/Software commercialization seed mappings are explicit and relation-typed.
+- PI-000 baseline audit passed: R3 package and required source-of-truth files are present; field dictionary contains the seven frozen center/relation sheets with zero formula-error matches; Git branch/commit and production application/database versions match the checkpoint; `4f6d8a2c1b90` is confirmed unexecuted because production head remains `a2c63a4f5798`.
+- R3 final package structure passed: 49 files, 19 Mockups, six annotated detail views, required `FIELD_DICTIONARY.xlsx`, `FINAL_DESIGN_DECISIONS.md`, and `REVIEW_INDEX.md` all present and readable.
+- R3 raster QA passed: all 19 Mockups and six annotated PNG files measure exactly 1920x1080.
+- R3 browser QA passed on the clean export directory: all 18 standard screens load, no horizontal overflow is present, no serious console warnings/errors were recorded, all required local image assets returned successfully, and no `/artifacts/` image dependency remains in computed page visuals.
+- R3 semantic Gates passed: Product image dominance/right-side business actions/recommendation layers; Software dashboard-only primary imagery; Algorithm input-process-output plus separated configuration parameters and measured metrics; Model test evidence with dataset/sample/resolution/hardware/runtime/date/source; Scene real bridge/ship/waterway visual; Solution structured architecture, capability coverage, and BOM.
+- R3 PRICE_VIEW presentation assertions passed: product no-price mode contains no price tab/area; solution no-price mode contains no reference quote, unit price, subtotal, or total.
+- R3 workbook QA remains passed: seven sheets, R3 ModelCapability metric-test fields and Solution capability-coverage fields present, zero formula-error matches, and readable rendered previews.
+- R3 ZIP integrity passed: archive extracts successfully to the expected top-level directory with 49 files, 19 Mockups, six annotated views, 25/25 exact-size PNGs, readable Markdown documents, and a valid XLSX container containing `xl/workbook.xml`.
+- Round 2 design differentiation passed: Product specifications, Software module matrix, Algorithm input-process-output pipeline, Model metric/contract view, Scene business matrix/flow, and Solution real-object architecture are distinct while sharing the same Design System.
+- Round 2 product cards demonstrate radar, AI terminal, camera, and software-product-specific metrics; software assets use system UI imagery rather than hardware photos.
+- Round 2 `price=0` assertions passed on product list, product detail, and solution detail: no price text, price panel, BOM unit-price header, subtotal header, or total appears.
+- Round 2 browser console error count is zero; 18 Mockups and six annotated screenshots all measure exactly 1920x1080.
+- Round 2 field dictionary contains 157 rows across Product 34, Software 21, Algorithm 20, ModelCapability 28, Scene 16, Solution 24, Relations 14; key range inspection, formula-error scan, and visual previews passed.
+- UI acceptance export: 46/46 requested screenshot filenames exist and all measure exactly 1920×1080; representative workbench/product/software/algorithm/model/scene/solution and normal/admin images were visually inspected.
+- UI field inventory: 99 rows across six centers exported to XLSX; key range inspection passed and formula-error scan returned zero matches; rendered preview was visually legible.
+- Live price security: admin product detail included `price`, sales detail omitted the key; admin BOM included unit price/total, sales BOM omitted both.
+- Non-destructive UI checks: product search returned one matching card; card/table switching, create/edit/price/relations dialogs, relation-remove confirmation cancel, and delete confirmation cancel passed without persistent mutation.
+- Final live counts observed: products 16, software 3, algorithms 10, model capabilities 15, scenes 5, solutions 6, and six solutions with BOM. Product id 27 (`雷达`) appeared externally during the export and was preserved rather than modified.
 - V3-D15-FINAL formal-state recheck passed after cleanup: API health ok on immutable `haizhi-hub-api:4.2`; Dify API, Moodle DB, and Moodle healthy; final semantic seed audit unchanged; no temporary report/checkpoint artifacts remain in application document data.
 - V3-D15 report acceptance passed: 12-page DOCX generated; LibreOffice server render succeeded; every rendered page was inspected with no clipping, overlap, broken tables, missing glyphs, or footer/header defects; final a11y audit has 0 high-severity findings and 12/12 final raster pages match the inspected render pixel-for-pixel.
 - V3-D14-14 browser console returned no entries; all six center list pages at the narrower 1280x720 live viewport reported `scrollWidth <= innerWidth` and no loading/error state. Responsive CSS breakpoints at 1450/1200/1050/1000/900/760/720/700/640/600 cover the required desktop matrices; six center screenshots are preserved under `artifacts/screenshots/`.
@@ -178,8 +217,8 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Moodle briefly became unavailable while correcting its health check because an overly broad replacement also changed the MariaDB probe. The MariaDB-native probe was restored, both containers were recreated against persistent volumes, and database/Moodle health plus gateway HTTP checks passed with course data preserved.
 
 # CURRENT ERRORS
+- No application-blocking errors remain.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
-- Exact browser viewport resizing is not exposed by the current in-app browser control surface. The live 1280x720 viewport is narrower than every required desktop width, passed without horizontal overflow, and the required 1440/1366 behavior maps to the verified 1450px breakpoint; this is recorded as a tooling limitation, not an application failure.
 
 # FIXES APPLIED
 - Corrected the PostgreSQL permission-freeze migration ambiguity and canonical six-center CRUD/deletion cleanup paths; deployed immutable API `4.2`.
@@ -218,23 +257,24 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `a2c63a4f5798`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `4f6d8a2c1b90`.
 
 # APPLICATION VERSION
-- Formal backend deployed: hardened `haizhi-hub-api:4.2`.
-- Formal frontend built/deployed from `haizhi-hub-web:4.0` assets.
+- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.4-r3` (image id prefix `780de65762b9`; running container id prefix `8a9028b5f717`).
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
+- Local current commit: `HEAD` (PI-012 scoped production-readiness commit; resolve with `git rev-parse HEAD`).
 - Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
-- No uncommitted product, backend, migration, test, screenshot, report, or checkpoint code changes remain.
-- Local `artifacts/report-render/` contains untracked QA intermediates only and is intentionally excluded from delivery/commits.
+- No scoped production implementation remains uncommitted after PI-012.
+- Untracked design-review exports, render intermediates, extraction/build intermediates, and audit-only files remain intentionally excluded. They are user-owned or reproducible evidence and do not affect the deployed application.
+- `frontend/tsconfig.tsbuildinfo` remains intentionally uncommitted as generated build metadata.
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
@@ -250,10 +290,16 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- None for product/UI review readiness.
+- None for six-center business acceptance.
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_FINAL_DESIGN_REVIEW`, do not modify formal Vue/FastAPI code, models, migrations, database, formal CSS/tokens, Seed Data, deployment, services, or runtime pages. Do not start implementation until the user explicitly provides `DESIGN APPROVED`.
+- While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_DESIGN_REVIEW_R2`, do not code, execute/build migrations, deploy, mutate formal data, change running pages, or continue six-center implementation. Resume only after explicit `DESIGN APPROVED` or specific Round 2 design feedback.
+- While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_DESIGN_CORRECTION`, do not code, execute/build migrations, deploy, mutate formal data, or alter the running UI. Only design corrections are allowed until an explicit `DESIGN APPROVED` decision.
+- While `NEXT EXACT STEP` is `WAITING_FOR_SIX_CENTERS_DESIGN_REVIEW_DECISION`, do not modify business code, execute/build the draft migration, build or deploy the application, mutate formal data, or change the running UI.
+- Do not repeat the UI acceptance export; use the existing timestamped export as the review baseline.
+- Do not edit/delete product id 27 (`雷达`) without explicit external product-review instruction; it appeared during the audit and was not created by the audit process.
 - Do not modify/delete/replace legacy port 80 service.
 - Do not re-download Docker Compose v2.32.4; installed and verified.
 - Do not re-import Redis image unless removed; image and container verified.
@@ -265,7 +311,7 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Do not repeat D01a full hardened business regression or destructive login-rate sequence unless authentication/runtime code changes; both passed and the API was restarted cleanly.
 - Do not repeat D02a full backup/restore unless storage or schema changes; PostgreSQL and MinIO backup, checksum, isolated restore, validation, and cleanup passed.
 - Do not repeat D03a controlled rollback unless application image/runtime/schema changes; rollback to `3.19` and restoration to hardened `3.20` passed with data preserved.
-- While `NEXT EXACT STEP` is `WAITING_FOR_PRODUCT_UI_REVIEW`, do not add features/pages/fields/seed data, change UI, mutate formal data/runtime, or stop services without new review feedback.
+- While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_REVIEW_AND_OPTIMIZATION_INSTRUCTION`, do not add features/pages/fields/seed data, change UI, mutate formal data/runtime, or stop services without new review feedback.
 - Do not repeat V3 deployment, full live API acceptance, browser CRUD, integration regression, report render, or backup work unless subsequent source/runtime changes invalidate those results.
 
 # GATE A

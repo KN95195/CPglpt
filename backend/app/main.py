@@ -13,12 +13,14 @@ from .models import *
 from .seed import bootstrap,ensure_v3_seed
 from .config import settings
 from .storage import storage
+from .knowledge import router as knowledge_router
 security=HTTPBearer(auto_error=False)
 @asynccontextmanager
 async def lifespan(app):
  with next(session()) as db: bootstrap(db);ensure_v3_seed(db)
  yield
-app=FastAPI(title='海智产品中心正式版',version='1.0.0',lifespan=lifespan)
+app=FastAPI(title='海智产品中心正式版',version='5.0.0',lifespan=lifespan)
+app.include_router(knowledge_router)
 login_failures={}
 @app.middleware('http')
 async def security_headers(request:Request,call_next):
@@ -32,13 +34,15 @@ async def security_headers(request:Request,call_next):
   response.headers['Cache-Control']='no-store'
  return response
 class Login(BaseModel): username:str;password:str
-class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
-class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;data_status:str|None=None
+class ProductParameterIn(BaseModel): id:int|None=None;name:str=Field(min_length=1,max_length=120);value:str='';unit:str='';group:str='基础参数';highlight:bool=False;order:int=Field(default=0,ge=0)
+class ProductIn(BaseModel): name:str=Field(min_length=2);product_type:str='HARDWARE';model_code:str;current_version:str='v1.0';category_id:int;summary:str='';status:str='ON_SALE';main_image:str=''
+class ProductPatch(BaseModel): name:str|None=None;product_type:str|None=None;model_code:str|None=None;current_version:str|None=None;category_id:int|None=None;summary:str|None=None;status:str|None=None;main_image:str|None=None;dynamic_fields:dict[str,str]|None=None;parameters:list[ProductParameterIn]|None=None;data_status:str|None=None
 class CatalogIn(BaseModel): name:str=Field(min_length=2);summary:str='';code:str='';version:str='v1.0';category:str='通用';cover_image:str='';pain_points:str='';goals:list[str]=[];business_process:list[str]=[];core_capability_summary:str='';function_type:str='识别';input_summary:str='';output_summary:str='';metrics:dict[str,str]={};input_requirements:dict[str,str]={};deployment_requirements:dict[str,str]={};boundaries:list[str]=[];software_type:str='PLATFORM';vendor:str='海智科技';deployment_mode:str='PRIVATE';supported_os:list[str]=[];scene_id:int|None=None;tier:str='标准型';target_description:str='';coverage_scope:str='';architecture_summary:str='';implementation_notes:str='';status:str='SUPPORTED'
 class CatalogPatch(BaseModel): name:str|None=None;summary:str|None=None;code:str|None=None;version:str|None=None;category:str|None=None;cover_image:str|None=None;pain_points:str|None=None;goals:list[str]|None=None;business_process:list[str]|None=None;core_capability_summary:str|None=None;function_type:str|None=None;input_summary:str|None=None;output_summary:str|None=None;metrics:dict[str,str]|None=None;input_requirements:dict[str,str]|None=None;deployment_requirements:dict[str,str]|None=None;boundaries:list[str]|None=None;software_type:str|None=None;vendor:str|None=None;deployment_mode:str|None=None;supported_os:list[str]|None=None;scene_id:int|None=None;tier:str|None=None;target_description:str|None=None;coverage_scope:str|None=None;architecture_summary:str|None=None;implementation_notes:str|None=None;status:str|None=None
 class SolutionBomItemIn(BaseModel): product_id:int;quantity:int=Field(default=1,ge=1,le=10000);unit:str='台';purpose:str='';requirement_level:str='REQUIRED';recommendation_reason:str=''
 class SolutionBomIn(BaseModel): items:list[SolutionBomItemIn]
 class RelationIn(BaseModel): source_type:str;source_id:int;target_type:str;target_id:int;metadata:dict[str,str|int|bool]={}
+class RelationPatch(BaseModel): metadata:dict[str,str|int|bool]
 class ProductPricePatch(BaseModel): reference_price:float=Field(ge=0);currency:str='CNY';tax_included:bool=True;tax_rate:float=Field(default=13,ge=0,le=100);valid_until:datetime|None=None;notes:str=''
 class BomIn(BaseModel): scene:str=Field(min_length=2);upstream_km:float=Field(default=3,ge=0,le=1000);downstream_km:float=Field(default=3,ge=0,le=1000);ptz_count:int=Field(default=4,ge=0,le=1000);ais:bool=True;yaw:bool=True;ocr:bool=True;overheight:bool=False;vhf:bool=False
 class ProjectIn(BaseModel): name:str;customer:str;region:str;scene_id:int;requirements_json:dict={};bom_json:list=[]
@@ -72,10 +76,15 @@ def gateway_client(c:HTTPAuthorizationCredentials|None=Depends(security),db:Sess
   if not service_user: raise HTTPException(503,'gateway service account unavailable')
   return service_user
  return user(c,db)
-def dto(p):return {'id':p.id,'name':p.name,'productType':p.product_type,'modelCode':p.model_code,'categoryId':p.category_id,'category':p.category.name,'summary':p.summary,'status':p.status,'mainImage':p.main_image,'dataStatus':p.data_status,'updatedAt':p.updated_at.isoformat()}
-def product_detail_dto(p,db):
+def parameter_dto(x):return {'id':x.id,'name':x.name,'value':x.value,'unit':x.unit,'group':x.group_name,'highlight':x.highlight,'order':x.sort_order}
+def dto(p,db=None,u=None):
+ result={'id':p.id,'name':p.name,'productType':p.product_type,'modelCode':p.model_code,'currentVersion':p.current_version,'categoryId':p.category_id,'category':p.category.name,'summary':p.summary,'status':p.status,'mainImage':p.main_image,'dataStatus':p.data_status,'parameters':[parameter_dto(x) for x in p.parameters],'updatedAt':p.updated_at.isoformat()}
+ if db and u and 'PRICE_VIEW' in permission_codes(u):
+  price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==p.id));result['price']={'referencePrice':float(price.reference_price),'currency':price.currency} if price else None
+ return result
+def product_detail_dto(p,db,u=None):
  caps=db.scalars(select(Capability).join(ProductCapability,Capability.id==ProductCapability.capability_id).where(ProductCapability.product_id==p.id)).all()
- return dto(p)|{'dynamicFields':json.loads(p.dynamic_fields_json or '{}'),'capabilities':[{'id':c.id,'type':'model-capabilities','name':c.name,'category':c.category,'meta':c.category,'summary':c.description} for c in caps]}
+ return dto(p,db,u)|{'dynamicFields':{x.name:x.value for x in p.parameters} or json.loads(p.dynamic_fields_json or '{}'),'capabilities':[{'id':c.id,'type':'model-capabilities','name':c.name,'category':c.category,'meta':c.category,'summary':c.description} for c in caps]}
 RELATION_MODELS={'products':Product,'software':Software,'algorithms':Algorithm,'model-capabilities':Capability,'scenes':Scene,'solutions':Solution}
 def relation_payload(kind:str,rid:int,db:Session):
  rows=db.scalars(select(KnowledgeRelation).where(((KnowledgeRelation.source_type==kind)&(KnowledgeRelation.source_id==rid))|((KnowledgeRelation.target_type==kind)&(KnowledgeRelation.target_id==rid))).order_by(KnowledgeRelation.updated_at.desc())).all();result=[]
@@ -214,7 +223,7 @@ def dashboard(u:User=Depends(user),db:Session=Depends(session)):
 def products(q:str='',db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  st=select(Product).order_by(Product.updated_at.desc())
  if q:st=st.where(Product.name.ilike('%'+q+'%')|Product.model_code.ilike('%'+q+'%'))
- return [dto(x) for x in db.scalars(st)]
+ return [dto(x,db,u) for x in db.scalars(st)]
 @app.get('/api/product-categories')
 def product_categories(db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  return [{'id':x.id,'name':x.name} for x in db.scalars(select(ProductCategory).order_by(ProductCategory.name))]
@@ -222,7 +231,7 @@ def product_categories(db:Session=Depends(session),u:User=Depends(permit('KNOWLE
 def product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  p=db.get(Product,pid)
  if not p:raise HTTPException(404,'产品不存在')
- result=product_detail_dto(p,db)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'relations':relation_payload('products',pid,db)}
+ result=product_detail_dto(p,db,u)|{'source':p.source,'owner':p.owner,'lastVerifiedAt':p.last_verified_at.isoformat(),'relations':relation_payload('products',pid,db),'documents':[{'id':x.id,'name':x.name,'mimeType':x.mime_type} for x in db.scalars(select(DocumentAsset).where(DocumentAsset.product_id==pid).order_by(DocumentAsset.updated_at.desc()))]}
  if 'PRICE_VIEW' in permission_codes(u):
   price=db.scalar(select(ProductPrice).where(ProductPrice.product_id==pid))
   result['price']={'referencePrice':float(price.reference_price),'currency':price.currency,'taxIncluded':price.tax_included,'taxRate':float(price.tax_rate),'validUntil':price.valid_until.isoformat() if price.valid_until else None,'notes':price.notes} if price else None
@@ -245,15 +254,20 @@ def update_product_price(pid:int,x:ProductPricePatch,db:Session=Depends(session)
 @app.post('/api/products',status_code=201)
 @app.post('/api/admin/products',status_code=201)
 def create_product(x:ProductIn,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
- p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p)
+ p=Product(**x.model_dump(),source='后台维护',owner=u.display_name);db.add(p);db.flush();audit(db,u,'CREATE','product',p.id,x.model_dump());db.commit();db.refresh(p);return dto(p,db,u)
 @app.patch('/api/products/{pid}')
 @app.patch('/api/admin/products/{pid}')
 def update_product(pid:int,x:ProductPatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
  values=x.model_dump(exclude_none=True)
+ parameters=values.pop('parameters',None)
  if 'dynamic_fields' in values:values['dynamic_fields_json']=json.dumps(values.pop('dynamic_fields'),ensure_ascii=False)
  for k,v in values.items(): setattr(p,k,v)
+ if parameters is not None:
+  db.query(ProductParameter).filter(ProductParameter.product_id==pid).delete()
+  db.add_all([ProductParameter(product_id=pid,name=item['name'].strip(),value=item['value'],unit=item['unit'],group_name=item['group'].strip() or '基础参数',highlight=item['highlight'],sort_order=index) for index,item in enumerate(parameters)])
+  p.dynamic_fields_json=json.dumps({item['name']:item['value'] for item in parameters},ensure_ascii=False)
  p.owner=u.display_name;audit(db,u,'UPDATE','product',p.id,values);db.commit();db.refresh(p);return product_detail_dto(p,db)
 @app.delete('/api/products/{pid}',status_code=204)
 @app.delete('/api/admin/products/{pid}',status_code=204)
@@ -261,6 +275,7 @@ def delete_product(pid:int,db:Session=Depends(session),u:User=Depends(permit('KN
  p=db.get(Product,pid)
  if not p: raise HTTPException(404,'产品不存在')
  db.query(ProductCapability).filter(ProductCapability.product_id==pid).delete()
+ db.query(ProductParameter).filter(ProductParameter.product_id==pid).delete()
  db.query(ProductPrice).filter(ProductPrice.product_id==pid).delete()
  db.query(SolutionBomItem).filter(SolutionBomItem.product_id==pid).delete()
  db.query(DocumentAsset).filter(DocumentAsset.product_id==pid).update({'product_id':None})
@@ -362,6 +377,16 @@ def create_relation(x:RelationIn,db:Session=Depends(session),u:User=Depends(perm
  existing=db.scalar(select(KnowledgeRelation).where(KnowledgeRelation.source_type==x.source_type,KnowledgeRelation.source_id==x.source_id,KnowledgeRelation.target_type==x.target_type,KnowledgeRelation.target_id==x.target_id))
  if existing:raise HTTPException(409,'关系已存在')
  rec=KnowledgeRelation(source_type=x.source_type,source_id=x.source_id,target_type=x.target_type,target_id=x.target_id,metadata_json=json.dumps(x.metadata,ensure_ascii=False));db.add(rec);db.flush();audit(db,u,'CREATE','knowledge_relation',rec.id,x.model_dump());db.commit();db.refresh(rec);return {'id':rec.id}
+
+@app.patch('/api/relations/{rid}')
+def update_relation(rid:int,x:RelationPatch,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ rec=db.get(KnowledgeRelation,rid)
+ if not rec:raise HTTPException(404,'关系不存在')
+ allowed={'supportVersion','minimumVersion','recommendedConcurrency','maxConcurrency','supportStatus','purpose','relationLevel','recommendationReason','notes'}
+ unknown=set(x.metadata)-allowed
+ if unknown:raise HTTPException(422,'不支持的关系属性：'+','.join(sorted(unknown)))
+ rec.metadata_json=json.dumps(x.metadata,ensure_ascii=False);audit(db,u,'UPDATE','knowledge_relation',rid,x.metadata);db.commit();db.refresh(rec)
+ return {'id':rec.id,'metadata':json.loads(rec.metadata_json)}
 
 @app.delete('/api/relations/{rid}',status_code=204)
 def delete_relation(rid:int,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
