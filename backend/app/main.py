@@ -12,6 +12,7 @@ from .database import Base,engine,session
 from .models import *
 from .seed import bootstrap,ensure_v3_seed,pwd
 from .config import settings
+from .directory_crypto import decrypt_directory_password,encrypt_directory_password
 from .storage import storage
 from .knowledge import router as knowledge_router
 security=HTTPBearer(auto_error=False)
@@ -57,6 +58,8 @@ class TrainingCourseIn(BaseModel): external_course_id:str;name:str=Field(min_len
 class RolePermissionPatch(BaseModel): permissions:list[str]
 class DirectoryApproval(BaseModel): candidate_id:int;role_code:str
 class DirectoryConfirm(BaseModel): run_id:int;users:list[DirectoryApproval]
+class DirectoryConfigInput(BaseModel):
+ enabled:bool=False;server_type:str='MS_ACTIVE_DIRECTORY';protocol:str=Field(default='LDAP',pattern=r'^(LDAP|LDAPS)$');host:str='';port:int=Field(default=389,ge=1,le=65535);timeout_seconds:int=Field(default=30,ge=1,le=300);bind_dn:str='';bind_password:str='';base_dn:str='';login_domain:str='';user_filter:str='(&(objectClass=user)(sAMAccountName=*))';default_role:str='sales'
 class UserCreate(BaseModel): username:str=Field(min_length=2,max_length=64);display_name:str=Field(min_length=1,max_length=80);password:str=Field(min_length=8,max_length=128);role_code:str;email:str='';department:str='';enabled:bool=True
 class UserPatch(BaseModel): display_name:str|None=None;password:str|None=Field(default=None,min_length=8,max_length=128);role_code:str|None=None;email:str|None=None;department:str|None=None;enabled:bool|None=None
 class RoleCreate(BaseModel): code:str=Field(pattern=r'^[a-z][a-z0-9_]{1,63}$');name:str=Field(min_length=2,max_length=80);permissions:list[str]=[]
@@ -79,13 +82,21 @@ def permit(code):
   if code not in permission_codes(u):raise HTTPException(403,'缺少权限：'+code)
   return u
  return dep
-def ad_ready():return bool(settings.ad_server_url and settings.ad_base_dn and settings.ad_bind_dn and settings.ad_bind_password)
-def ad_authenticate(username,password):
- if not settings.ad_server_url or not password:return False
+def get_directory_config(db):return db.get(DirectoryConfig,1)
+def ad_ready(config):return bool(config and config.enabled and config.host and config.base_dn and config.bind_dn and config.bind_password_encrypted)
+def directory_connection(config,password=''):
+ from ldap3 import ALL,Connection,Server
+ secret=password or decrypt_directory_password(config.bind_password_encrypted)
+ if not secret:raise RuntimeError('请填写管理密码')
+ server=Server(config.host,port=config.port,use_ssl=config.protocol=='LDAPS',connect_timeout=config.timeout_seconds,get_info=ALL)
+ return Connection(server,user=config.bind_dn,password=secret,auto_bind=True,receive_timeout=config.timeout_seconds,raise_exceptions=True)
+def ad_authenticate(username,password,db):
+ config=get_directory_config(db)
+ if not ad_ready(config) or not password:return False
  try:
   from ldap3 import Connection,Server
-  principal=f'{username}@{settings.ad_login_domain}' if settings.ad_login_domain and '@' not in username else username
-  connection=Connection(Server(settings.ad_server_url),user=principal,password=password,auto_bind=True,raise_exceptions=True);connection.unbind();return True
+  principal=f'{username}@{config.login_domain}' if config.login_domain and '@' not in username else username
+  connection=Connection(Server(config.host,port=config.port,use_ssl=config.protocol=='LDAPS',connect_timeout=config.timeout_seconds),user=principal,password=password,auto_bind=True,receive_timeout=config.timeout_seconds,raise_exceptions=True);connection.unbind();return True
  except Exception:return False
 def gateway_client(c:HTTPAuthorizationCredentials|None=Depends(security),db:Session=Depends(session)):
  if not c: raise HTTPException(401,'missing gateway credential')
@@ -264,7 +275,7 @@ def login(x:Login,request:Request,db:Session=Depends(session)):
  attempts=[stamp for stamp in login_failures.get(key,[]) if now-stamp<300]
  if len(attempts)>=5:raise HTTPException(429,'登录失败次数过多，请稍后重试')
  u=db.scalar(select(User).where(User.username==x.username))
- valid=bool(u and ((u.auth_source=='AD' and ad_authenticate(x.username,x.password)) or (u.auth_source!='AD' and pwd.verify(x.password,u.password_hash))))
+ valid=bool(u and ((u.auth_source=='AD' and ad_authenticate(x.username,x.password,db)) or (u.auth_source!='AD' and pwd.verify(x.password,u.password_hash))))
  if not valid:
   login_failures[key]=attempts+[now];raise HTTPException(401,'账号或密码错误')
  login_failures.pop(key,None)
@@ -619,11 +630,39 @@ def update_role_permissions(role_code:str,x:RolePermissionPatch,db:Session=Depen
  role=db.scalar(select(Role).where(Role.code==role_code))
  if not role:raise HTTPException(404,'角色不存在')
  apply_role_permissions(db,role,x.permissions);audit(db,u,'UPDATE','role_permissions',role.id,{'permissions':sorted(x.permissions)});db.commit();return role_dto(role)
+def directory_config_dto(config):
+ return {'enabled':bool(config and config.enabled),'serverType':config.server_type if config else 'MS_ACTIVE_DIRECTORY','protocol':config.protocol if config else 'LDAP','host':config.host if config else '','port':config.port if config else 389,'timeoutSeconds':config.timeout_seconds if config else 30,'bindDn':config.bind_dn if config else '','passwordConfigured':bool(config and config.bind_password_encrypted),'baseDn':config.base_dn if config else '','loginDomain':config.login_domain if config else '','userFilter':config.user_filter if config else '(&(objectClass=user)(sAMAccountName=*))','defaultRole':config.default_role if config else 'sales','lastTestStatus':config.last_test_status if config else 'UNTESTED','lastTestMessage':config.last_test_message if config else '','lastTestAt':config.last_test_at.isoformat() if config and config.last_test_at else None}
+def validate_directory_values(x,password_available=False):
+ missing=[name for name,value in [('服务器地址',x.host.strip()),('管理员账号',x.bind_dn.strip()),('Base DN',x.base_dn.strip()),('管理密码',x.bind_password or password_available)] if not value]
+ if missing:raise HTTPException(422,'请填写：'+'、'.join(missing))
 @app.get('/api/admin/directory/status')
 def directory_status(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
- last=db.scalar(select(DirectorySyncRun).order_by(DirectorySyncRun.created_at.desc()))
+ config=get_directory_config(db);last=db.scalar(select(DirectorySyncRun).order_by(DirectorySyncRun.created_at.desc()))
  pending=db.scalar(select(func.count(DirectorySyncCandidate.id)).where(DirectorySyncCandidate.run_id==last.id,DirectorySyncCandidate.approval_status=='PENDING')) if last else 0
- return {'provider':'AD','configured':ad_ready(),'server':settings.ad_server_url,'baseDn':settings.ad_base_dn,'defaultRole':settings.ad_default_role,'missingConfiguration':[name for name,value in [('只读同步账号',settings.ad_bind_dn),('同步账号密码',settings.ad_bind_password)] if not value],'lastRun':({'id':last.id,'status':last.status,'created':last.created_count,'updated':last.updated_count,'pending':pending,'error':last.error_message,'finishedAt':last.finished_at.isoformat() if last.finished_at else None} if last else None)}
+ result=directory_config_dto(config);result['configured']=ad_ready(config);result['lastRun']=({'id':last.id,'status':last.status,'created':last.created_count,'updated':last.updated_count,'pending':pending,'error':last.error_message,'finishedAt':last.finished_at.isoformat() if last.finished_at else None} if last else None);return result
+@app.put('/api/admin/directory/config')
+def save_directory_config(x:DirectoryConfigInput,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ config=get_directory_config(db);password_available=bool(config and config.bind_password_encrypted)
+ if x.enabled:validate_directory_values(x,password_available)
+ role=db.scalar(select(Role).where(Role.code==x.default_role))
+ if not role:raise HTTPException(422,'默认角色不存在')
+ if not config:config=DirectoryConfig(id=1);db.add(config)
+ for field in ('enabled','server_type','protocol','host','port','timeout_seconds','bind_dn','base_dn','login_domain','user_filter','default_role'):setattr(config,field,getattr(x,field))
+ if x.bind_password:config.bind_password_encrypted=encrypt_directory_password(x.bind_password)
+ config.last_test_status='UNTESTED';config.last_test_message='配置已变更，请执行连通性测试';config.last_test_at=None
+ audit(db,u,'UPDATE','directory_config',config.id,{'enabled':x.enabled,'serverType':x.server_type,'protocol':x.protocol,'host':x.host,'port':x.port,'timeoutSeconds':x.timeout_seconds,'bindDn':x.bind_dn,'baseDn':x.base_dn,'loginDomain':x.login_domain,'defaultRole':x.default_role,'passwordChanged':bool(x.bind_password)});db.commit();db.refresh(config);return directory_config_dto(config)
+@app.post('/api/admin/directory/test')
+def test_directory_config(x:DirectoryConfigInput,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ saved=get_directory_config(db);validate_directory_values(x,bool(saved and saved.bind_password_encrypted))
+ config=DirectoryConfig(server_type=x.server_type,protocol=x.protocol,host=x.host,port=x.port,timeout_seconds=x.timeout_seconds,bind_dn=x.bind_dn,base_dn=x.base_dn,login_domain=x.login_domain,user_filter=x.user_filter,default_role=x.default_role,bind_password_encrypted=saved.bind_password_encrypted if saved else '')
+ try:
+  connection=directory_connection(config,x.bind_password);connection.search(x.base_dn,'(objectClass=*)',attributes=[]);connection.unbind();message=f'{x.protocol} {x.host}:{x.port} 连接和目录认证成功'
+  if saved:saved.last_test_status='SUCCESS';saved.last_test_message=message;saved.last_test_at=datetime.now(timezone.utc);db.commit()
+  audit(db,u,'TEST','directory_config',saved.id if saved else 'unsaved',{'protocol':x.protocol,'host':x.host,'port':x.port,'success':True});db.commit();return {'success':True,'message':message}
+ except Exception as exc:
+  message='连接失败：'+str(exc)[:300]
+  if saved:saved.last_test_status='FAILED';saved.last_test_message=message;saved.last_test_at=datetime.now(timezone.utc);db.commit()
+  raise HTTPException(502,message)
 def directory_candidate_dto(row,db):
  existing=db.scalar(select(User).where((User.external_id==row.external_id)|(User.username==row.username)))
  return {'id':row.id,'runId':row.run_id,'username':row.username,'displayName':row.display_name,'email':row.email,'department':row.department,'distinguishedName':row.distinguished_name,'changeType':row.change_type,'approvalStatus':row.approval_status,'roleCode':existing.role.code if existing else row.role_code,'existingUser':bool(existing)}
@@ -638,22 +677,24 @@ def directory_candidates(run_id:int|None=None,db:Session=Depends(session),u:User
 @app.post('/api/admin/directory/sync')
 def sync_directory(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  run=DirectorySyncRun(status='RUNNING',initiated_by=u.id);db.add(run);db.commit();db.refresh(run)
- if not ad_ready():run.status='FAILED';run.error_message='AD连接参数未配置完整';run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(503,'AD连接参数未配置完整')
+ config=get_directory_config(db)
+ if not ad_ready(config):run.status='FAILED';run.error_message='AD同步未启用或连接参数未配置完整';run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(503,'请先启用并保存完整的 AD 配置')
  try:
-  from ldap3 import ALL,Connection,Server,SUBTREE
-  connection=Connection(Server(settings.ad_server_url,get_info=ALL),user=settings.ad_bind_dn,password=settings.ad_bind_password,auto_bind=True,raise_exceptions=True)
-  attributes=[settings.ad_username_attribute,settings.ad_display_name_attribute,settings.ad_email_attribute,settings.ad_department_attribute,settings.ad_external_id_attribute];connection.search(settings.ad_base_dn,settings.ad_user_filter,search_scope=SUBTREE,attributes=attributes)
-  role=db.scalar(select(Role).where(Role.code==settings.ad_default_role)) or db.scalar(select(Role).where(Role.code=='sales'))
+  from ldap3 import SUBTREE
+  connection=directory_connection(config)
+  username_attribute='sAMAccountName';display_name_attribute='displayName';email_attribute='mail';department_attribute='department';external_id_attribute='objectGUID'
+  attributes=[username_attribute,display_name_attribute,email_attribute,department_attribute,external_id_attribute];connection.search(config.base_dn,config.user_filter,search_scope=SUBTREE,attributes=attributes)
+  role=db.scalar(select(Role).where(Role.code==config.default_role)) or db.scalar(select(Role).where(Role.code=='sales'))
   if not role:raise RuntimeError('AD默认角色不存在')
   seen=set()
   for entry in connection.entries:
    def value(name):
     item=getattr(entry,name,None);raw=item.value if item is not None else '';return raw.hex() if isinstance(raw,bytes) else str(raw or '')
-   username=value(settings.ad_username_attribute).strip()
+   username=value(username_attribute).strip()
    if not username:continue
-   distinguished_name=str(entry.entry_dn);department=value(settings.ad_department_attribute) or next((part[3:] for part in distinguished_name.split(',') if part.upper().startswith('OU=') and part[3:]!='浙江海莱云智科技有限公司'),'')
-   seen.add(username.lower());external=value(settings.ad_external_id_attribute) or distinguished_name;rec=db.scalar(select(User).where((User.external_id==external)|(User.username==username)))
-   candidate=DirectorySyncCandidate(run_id=run.id,external_id=external,username=username,display_name=value(settings.ad_display_name_attribute) or username,email=value(settings.ad_email_attribute),department=department,distinguished_name=distinguished_name,change_type='UPDATE' if rec else 'CREATE',role_code=rec.role.code if rec else role.code);db.add(candidate)
+   distinguished_name=str(entry.entry_dn);department=value(department_attribute) or next((part[3:] for part in distinguished_name.split(',') if part.upper().startswith('OU=') and part[3:]!='浙江海莱云智科技有限公司'),'')
+   seen.add(username.lower());external=value(external_id_attribute) or distinguished_name;rec=db.scalar(select(User).where((User.external_id==external)|(User.username==username)))
+   candidate=DirectorySyncCandidate(run_id=run.id,external_id=external,username=username,display_name=value(display_name_attribute) or username,email=value(email_attribute),department=department,distinguished_name=distinguished_name,change_type='UPDATE' if rec else 'CREATE',role_code=rec.role.code if rec else role.code);db.add(candidate)
   connection.unbind();run.status='PENDING_CONFIRMATION';audit(db,u,'PREVIEW','active_directory',run.id,{'candidates':len(seen)});db.commit();return directory_candidates(run.id,db,u)
  except Exception as exc:
   db.rollback();run=db.get(DirectorySyncRun,run.id);run.status='FAILED';run.error_message=str(exc)[:1000];run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(502,'AD同步失败：'+str(exc)[:200])
