@@ -2,21 +2,24 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-SIX_CENTERS_FINAL_ACCEPTED
+READY_FOR_PRODUCT_UI_REVIEW
 
 # CURRENT BUSINESS LOOP
-R3 final freeze is approved as the implementation source of truth. Execute CHANGE -> BUILD -> TEST -> FIX -> RETEST -> CHECKPOINT -> NEXT across the six centers, then backup, deploy, production smoke, rollback verification, and final acceptance. Deferred AI/RAG/Moodle/project-workbench expansion remains out of scope.
+Implement the approved post-acceptance整改: preserve each detail page's visual layout while enabling same-page section editing across all six centers; add real image upload; add document upload/preview/download with independent backend download authorization. Execute CHANGE -> BUILD -> TEST -> FIX -> RETEST -> CHECKPOINT -> NEXT, preserve the live 5.5.1 baseline and rollback point, then deploy an immutable replacement and complete formal browser/RBAC acceptance.
 
 # LAST SUCCESSFUL STEP
-UIF-006: Created checksum-verified PostgreSQL and MinIO predeploy backups at `/opt/haizhi-product-hub/backups/ui-final-predeploy-20260823`, retained stopped rollback container `haizhi-hub-api-v54-uirollback-20260823`, switched formal port 18080/443 to immutable `haizhi-hub-api:5.5-ui-final` (image id prefix `ff6724a7593a`) without touching port 80, and passed formal health, exact static bundle, Alembic `4f6d8a2c1b90`, hardened runtime, six-center API/RBAC/PRICE_VIEW/relation/BOM acceptance, cleanup, and data counts `17/3/10/15/5/6`.
+IEA-005: Deployed immutable `haizhi-hub-api:5.6.3-inline-edit`, retained stopped `5.6.2` rollback, and passed isolated plus formal six-center CRUD/RBAC/PRICE_VIEW/BOM acceptance, image upload/read/delete, document upload/preview/download/delete, independent `DOCUMENT_DOWNLOAD` denial/allow checks, exact static chunk checks, hardened runtime checks, Alembic `6a9c2e7d4f31`, legacy port 80, formal health, and unauthenticated browser rendering with zero console warnings/errors. The final frontend fix strips read-only child-record IDs before inline PATCH payloads.
 
 # CURRENT STEP
-UIF-008_FINAL_ACCEPTANCE_PACKAGE_COMPLETE
+COMPLETE
 
 # NEXT EXACT STEP
-FINAL_STOP_CONDITION_SATISFIED_SIX_CENTERS_FINAL_ACCEPTED
+WAITING_FOR_PRODUCT_UI_REVIEW
 
 # COMPLETED STEPS
+- IEA-005: Deployed immutable `haizhi-hub-api:5.6.3-inline-edit` with exact frontend bundle `index-BdlHTqbF.js`, retained stopped `5.6.2` rollback, and completed isolated/formal API, RBAC, PRICE_VIEW, asset, document, migration, runtime, port-80, and browser-rendering acceptance.
+- IEA-004: Corrected inline child-record PATCH serialization so database `id` fields are not sent to strict backend DTOs; local Vue type-check/Vite build emitted all required application/vendor chunks.
+- IEA-003: Added migration `6a9c2e7d4f31`, image and document object APIs, independent `DOCUMENT_DOWNLOAD` permission, role-permission update API, and isolated upgrade/downgrade/re-upgrade plus API acceptance coverage.
 - UIF-008: Created the timestamped final acceptance package with 54 formal screenshots, 19 R3 reference mockups, implemented comparison evidence, eight focused test records, ten Markdown audit/report files, and a visually verified nine-page Word/PDF acceptance report. All Gates A-O pass; final status is `SIX CENTERS FINAL ACCEPTED`.
 - UIF-007E: Formal browser verified Scene list/detail route, H1, sidebar active state, semantic `/assets/bridge-ship-waterway.jpg`, responsive no-overflow at all four requested viewport profiles; Product same-page edit exposed the editable form/save controls and Cancel restored read mode; browser console errors/warnings remained zero. Replaced all eight affected Scene evidence images and added Product edit evidence.
 - UIF-007D: Switched formal runtime to immutable `haizhi-hub-api:5.5.1-ui-final` (`sha256:605485e91ca2...`), retained stopped rollback `haizhi-hub-api-v55-uirollback-20260823`, preserved legacy port 80, and passed formal health, exact static bundle, semantic image asset, Alembic `4f6d8a2c1b90`, hardened runtime, complete six-center API/RBAC/PRICE_VIEW/relation/BOM acceptance, cleanup, and gateway smoke.
@@ -119,6 +122,9 @@ FINAL_STOP_CONDITION_SATISFIED_SIX_CENTERS_FINAL_ACCEPTED
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- IEA-005 formal: health PASS; Alembic `6a9c2e7d4f31` PASS; exact HTML/JS/CSS/Vue/Element chunks HTTP 200 PASS; six-center CRUD/RBAC/PRICE_VIEW/relation/BOM acceptance PASS; image upload/read/delete PASS; document upload/list/preview/download/delete PASS; ordinary-user download 403 PASS; manager download PASS; cleanup PASS; UID 10001/read-only/cap-drop/no-new-privileges/two-network runtime PASS; legacy port 80 HTTP 200 PASS; login page rendered with zero browser console warnings/errors.
+- IEA-005 isolated candidate: migration/startup and health PASS; exact static chunks PASS; six-center acceptance PASS; image/document/RBAC acceptance PASS; all created test data and objects cleaned up.
+- IEA-004 local final verification: `npm run build`, Python `compileall app migrations`, and `git diff --check` PASS. Final chunks: `index-BdlHTqbF.js`, `index-CFWYjkG5.css`, `element-C7nSBjN6.js`, `vue-DO8QNb4G.js`.
 - UIF-006 formal smoke: health PASS; bundle `/assets/index-DsVeIerk.js` PASS; Alembic `4f6d8a2c1b90` PASS; counts Product 17, Software 3, Algorithm 10, Model Capability 15, Scene 5, Solution 6 PASS; six-center CRUD/RBAC/PRICE_VIEW/relation/BOM acceptance PASS; UID 10001 read-only runtime PASS; port 80 HTTP 200 unchanged PASS.
 - UIF-005B isolated candidate: health PASS; final static bundle names PASS; read-only UID 10001 runtime PASS; six list/detail APIs PASS; product-manager CRUD PASS; ordinary-user write denial PASS; PRICE_VIEW omission PASS; bidirectional relation PASS with frozen `supportVersion` metadata; solution BOM PASS; cleanup PASS.
 - PI-012 final local verification passed: `npm run build`, Python `compileall`, `git diff --check`, final ZIP integrity/checksum, and final report/artifact presence.
@@ -258,8 +264,9 @@ FINAL_STOP_CONDITION_SATISFIED_SIX_CENTERS_FINAL_ACCEPTED
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.5.1-ui-final` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
-- `haizhi-hub-api-v55-uirollback-20260823`: stopped retained rollback point on immutable `haizhi-hub-api:5.5-ui-final`.
+- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.6.3-inline-edit` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
+- `haizhi-hub-api-v562-inline-rollback-20260823`: stopped retained rollback point on immutable `haizhi-hub-api:5.6.2-inline-edit`.
+- `haizhi-inline-candidate-563`, `haizhi-inline-candidate`, and `haizhi-inline-pg`: stopped after isolated acceptance; retained temporarily as non-running diagnostic records.
 - `haizhi-hub-gateway`: running on host port 443; connected to `haizhi-hub-net` and `haizhi-moodle-net`.
 - `haizhi-moodle-db`: running and healthy with persistent named volume.
 - `haizhi-moodle`: running after completed Moodle setup, mapped to host port 18082 with persistent application/data volumes.
@@ -273,22 +280,22 @@ FINAL_STOP_CONDITION_SATISFIED_SIX_CENTERS_FINAL_ACCEPTED
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `4f6d8a2c1b90`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `6a9c2e7d4f31`.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.5.1-ui-final` (image id `sha256:605485e91ca21d2f596d8f43eddd59ed33710ec4a25089a64cfee5db3a48e9b8`; static bundle `/assets/index-DlJGqRh-.js`).
+- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.6.3-inline-edit` (image id `sha256:a92235ef31da566c76027783a6b2d8d02539a00061804950bae2726561c964db`; static bundle `/assets/index-BdlHTqbF.js`, stylesheet `/assets/index-CFWYjkG5.css`).
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
-- Local current commit: `HEAD` (PI-012 scoped production-readiness commit; resolve with `git rev-parse HEAD`).
+- Local implementation commit: `1f1e0aa68aeafcf307a6234ede90cc7757165516` (`feat: add inline knowledge editing and asset permissions`).
 - Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
-- Scoped production implementation is committed at `a2e54fc5b270174e38aea20d2c803ac79b5c93b6`; final checkpoint/report/package evidence is committed in the current `HEAD` (resolve with `git rev-parse HEAD`).
+- Inline editing, image/document management, download permission, migration, and acceptance test implementation is committed at `1f1e0aa68aeafcf307a6234ede90cc7757165516`.
 - Untracked design-review exports, render intermediates, extraction/build intermediates, and audit-only files remain intentionally excluded. They are user-owned or reproducible evidence and do not affect the deployed application.
 - `frontend/tsconfig.tsbuildinfo` remains intentionally uncommitted as generated build metadata.
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
