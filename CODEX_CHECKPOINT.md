@@ -2,21 +2,22 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-AD_MANUAL_CONFIGURATION_READY_FOR_LIVE_CREDENTIALS
+AD_MANUAL_CONFIGURATION_LIVE_CREDENTIAL_CORRECTION
 
 # CURRENT BUSINESS LOOP
 System administrators now manually configure and enable LDAP/LDAPS in the System Administration page, test connectivity, save encrypted credentials, manually read directory users into a pending batch, then approve only checked users with a selected Chinese role. No LDAP host, Base DN, bind account, or password is defaulted from backend environment variables. Version 5.7.2 is deployed; the first live directory read awaits credentials entered by an authorized administrator in the UI.
 
 # LAST SUCCESSFUL STEP
-AD-CONFIG-008: Deployed `haizhi-hub-api:5.7.2-ad-config-ui`, migrated production to `7a8c9d0e1f23`, passed candidate API/encryption/migration rollback tests and formal API/static/browser UI acceptance, retained stopped `5.7.1` as the immediate rollback container, and removed the temporary browser test account.
+AD-CONFIG-010: Diagnosed the production LDAP failure, sanitized control bytes in external errors, restored JSON 502 responses, added frontend non-JSON fallback and login-domain guidance/validation, deployed hardened `5.7.3-ad-error-fix`, repaired one stuck RUNNING sync record, and passed isolated plus formal regression tests.
 
 # CURRENT STEP
-AD-CONFIG-009: Await an authorized administrator entering the real AD read-only account and password in System Management, then run Connectivity Test, Save Configuration with Enable on, and Manual Domain User Sync.
+AD-CONFIG-011: Correct Login Domain to `hilaicloud.com`, verify the real `ldapreader@hilaicloud.com` password/account state, then rerun Connectivity Test before Manual Domain User Sync.
 
 # NEXT EXACT STEP
-ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CANDIDATES
+CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 
 # COMPLETED STEPS
+- AD-CONFIG-010: Root-caused the misleading frontend JSON error to an AD exception containing `NUL`, which PostgreSQL rejected while persisting the failed sync run. Added centralized LDAP error sanitization, JSON-safe failure persistence/response, robust frontend response parsing, explicit login-domain validation/help text, isolated marker `AD_NUL_ERROR_API_REGRESSION_PASS`, formal marker `PRODUCTION_AD_ERROR_FIX_PASS`, hardened deployment `haizhi-hub-api:5.7.3-ad-error-fix`, exact assets `index-BjXLl0fX.js` / `index-NXPMhlE1.css`, and rollback container `haizhi-hub-api-v572-adconfig-rollback-20260823`.
 - AD-CONFIG-008: Browser-verified the deployed System Management AD page at `http://10.1.2.1:443/`: manual enable switch, server type, LDAP/LDAPS protocol, host, port, timeout, administrator account, masked password, Base DN, login domain, user filter, Chinese default role, Connectivity Test, Save Configuration, and disabled-until-configured Manual Domain User Sync are all present and correctly laid out. Temporary browser acceptance account was deleted after validation.
 - AD-CONFIG-007: Tagged and deployed immutable `haizhi-hub-api:5.7.2-ad-config-ui`, restored the prior least-privilege runtime (`10001:10001`, read-only root filesystem, capability drop ALL, no-new-privileges, hardened `/tmp`), verified frontend assets `index-4PeU9K2z.js` / `index-Bh1FNCuB.css`, formal health through ports 18080 and 443, Alembic `7a8c9d0e1f23`, empty-by-default LDAP host/Base DN, and Chinese role display names; retained stopped `haizhi-hub-api-v571-adrollback-20260823`.
 - AD-CONFIG-006: Created formal PostgreSQL and MinIO backups with SHA-256 checksums at `/data/haizhi-product-hub/backups/20260823-194706-ad-config-5.7.2` before migration/deployment.
@@ -140,6 +141,7 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- AD error hotfix passed frontend production build, backend compileall, diff check, checksum transfer, immutable image build, control-byte unit test, login-domain validation test, isolated JSON 502/persistence regression, formal health/static/API tests, stale RUNNING-run repair, and hardened runtime verification.
 - AD 5.7.2 candidate and formal acceptance passed: frontend build, Python compileall, diff check, image build, migration upgrade/downgrade/re-upgrade, health, hardened runtime parity, manual configuration API validation, encrypted password persistence/no-response disclosure, blank-password preservation, connectivity failure handling, disabled-sync denial, Chinese roles, exact static assets, formal browser rendering, and temporary-account cleanup.
 - AD-APPROVAL-006 formal: PostgreSQL backup SHA-256 `042266a46bc48a5db1ed2c1fdec291e3f8f8c4a47fe8ecd88a52f53a129ba24f`; MinIO backup SHA-256 `180aeaf8e6378defef8920e9381af25776f311aadded72eb6af7a8abfb9aac4a`; Alembic `2f7b6c8d9e10`; hardened image `haizhi-hub-api:5.7.1-ad-approval`; direct health PASS; `5.7.0` rollback retained.
 - AD-APPROVAL-005 isolated: `AD_MANUAL_APPROVAL_ACCEPTANCE_PASS`; built-in roles all use Chinese names; English role names return 422; only checked candidates become login accounts; unchecked candidates remain absent; existing AD users update only after a later explicit confirmation; test records cleaned.
@@ -255,7 +257,7 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
-- Live AD authenticated connectivity and candidate enumeration remain unexecuted because the real read-only Bind DN/password must be entered manually by an authorized administrator. RootDSE and ports 389/636 are reachable; anonymous user search is rejected by AD as expected.
+- Live AD authentication returned Active Directory subcode `52e`, meaning the supplied bind username/password was rejected. The screenshot also showed Login Domain incorrectly set to a Base DN; it must be `hilaicloud.com`. Candidate enumeration remains pending corrected credentials.
 - V3-D12 local execution of `tests/v3_price_security.py` could not start because both available Windows Python runtimes lack the installed SQLAlchemy dependency; the test itself compiles and must run inside the API image after deployment.
 - External `http://10.1.2.1:18080/` is blocked by firewall; port 443 is used as the temporary formal entry.
 - HTTP `HEAD /` returns 405 because the static catch-all supports GET; GET root passed.
@@ -265,10 +267,11 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
-- Live AD synchronization cannot run until a read-only AD bind account DN and password are entered through the deployed System Administration UI; the application correctly reports the integration as not fully configured and does not default credentials in the backend.
+- Live AD synchronization cannot complete until Login Domain is corrected to `hilaicloud.com` and the domain administrator confirms the `ldapreader@hilaicloud.com` password/account is enabled, unlocked, and not expired.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
+- Sanitized LDAP/AD control bytes before database persistence or HTTP response, preventing PostgreSQL `NUL` failures and preserving structured JSON errors; added frontend non-JSON fallback and rejected Base-DN-shaped Login Domain values.
 - Replaced environment-only AD configuration with administrator-managed LDAP/LDAPS settings, explicit enable/test/save/sync actions, encrypted password-at-rest handling, and blank-password update preservation; secrets are never returned by the API.
 - Changed AD synchronization from direct account mutation to pending candidate batches plus selected-only confirmation, so administrators explicitly control who may log in.
 - Added Chinese-only role-name validation and localized all built-in role and permission display names; frontend role codes and permission codes are no longer exposed.
@@ -298,7 +301,8 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running `haizhi-hub-api:5.7.2-ad-config-ui` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api`: running `haizhi-hub-api:5.7.3-ad-error-fix` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api-v572-adconfig-rollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.2-ad-config-ui`.
 - `haizhi-hub-api-v571-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.1-ad-approval`.
 - `haizhi-hub-api-v570-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.0-material-admin`.
 - `haizhi-571-candidate` and `haizhi-571-pg`: isolated acceptance resources; candidate health, migration downgrade/re-upgrade, and manual approval workflow passed.
@@ -322,7 +326,7 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 - PostgreSQL 16 Alpine container. Production schema is at Alembic revision `7a8c9d0e1f23`.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: immutable `haizhi-hub-api:5.7.2-ad-config-ui` (frontend bundle `index-4PeU9K2z.js`, stylesheet `index-Bh1FNCuB.css`).
+- Formal backend/frontend deployed: immutable `haizhi-hub-api:5.7.3-ad-error-fix` (frontend bundle `index-BjXLl0fX.js`, stylesheet `index-NXPMhlE1.css`).
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
@@ -356,10 +360,11 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- AD live authenticated testing and user enumeration require a read-only Bind DN and password from the domain administrator. `10.1.1.102`, ports 389/636, RootDSE, `hilaicloud.com`, and `OU=浙江海莱云智科技有限公司,DC=hilaicloud,DC=com` are verified; anonymous user search is rejected by AD as expected. The credential must be entered manually in System Administration and is encrypted at rest.
+- AD live authenticated testing and user enumeration require the domain administrator to verify the rejected `ldapreader@hilaicloud.com` password/account state. `10.1.1.102`, ports 389/636, RootDSE, `hilaicloud.com`, and `OU=浙江海莱云智科技有限公司,DC=hilaicloud,DC=com` are verified; AD subcode `52e` confirms the connection reached AD but the supplied credentials were not accepted.
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- Do not repeat the 5.7.3 NUL-error diagnosis, isolated regression, formal deployment, or hardened runtime verification unless LDAP error handling/UI code changes.
 - Do not repeat the 5.7.2 build, isolated migration rollback cycle, `AD_CONFIG_API_ACCEPTANCE_PASS`, formal backup, deployment, static/API/browser acceptance, or temporary-account cleanup unless AD configuration code/schema/runtime changes.
 - Do not prefill, hardcode, or move LDAP host/Base DN/bind credentials back into backend environment defaults; configuration is intentionally administrator-managed in the UI.
 - Do not repeat the 5.7.1 isolated migration downgrade/re-upgrade or `AD_MANUAL_APPROVAL_ACCEPTANCE_PASS` suite unless AD approval code/schema changes.

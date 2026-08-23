@@ -84,6 +84,8 @@ def permit(code):
  return dep
 def get_directory_config(db):return db.get(DirectoryConfig,1)
 def ad_ready(config):return bool(config and config.enabled and config.host and config.base_dn and config.bind_dn and config.bind_password_encrypted)
+def directory_error_message(value,limit=1000):
+ return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]','',str(value)).strip()[:limit]
 def directory_connection(config,password=''):
  from ldap3 import ALL,Connection,Server
  secret=password or decrypt_directory_password(config.bind_password_encrypted)
@@ -635,6 +637,7 @@ def directory_config_dto(config):
 def validate_directory_values(x,password_available=False):
  missing=[name for name,value in [('服务器地址',x.host.strip()),('管理员账号',x.bind_dn.strip()),('Base DN',x.base_dn.strip()),('管理密码',x.bind_password or password_available)] if not value]
  if missing:raise HTTPException(422,'请填写：'+'、'.join(missing))
+ if x.login_domain and ('=' in x.login_domain or ',' in x.login_domain):raise HTTPException(422,'登录域请填写域名，例如 hilaicloud.com，不要填写 Base DN')
 @app.get('/api/admin/directory/status')
 def directory_status(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  config=get_directory_config(db);last=db.scalar(select(DirectorySyncRun).order_by(DirectorySyncRun.created_at.desc()))
@@ -660,7 +663,7 @@ def test_directory_config(x:DirectoryConfigInput,db:Session=Depends(session),u:U
   if saved:saved.last_test_status='SUCCESS';saved.last_test_message=message;saved.last_test_at=datetime.now(timezone.utc);db.commit()
   audit(db,u,'TEST','directory_config',saved.id if saved else 'unsaved',{'protocol':x.protocol,'host':x.host,'port':x.port,'success':True});db.commit();return {'success':True,'message':message}
  except Exception as exc:
-  message='连接失败：'+str(exc)[:300]
+  message='连接失败：'+directory_error_message(exc,300)
   if saved:saved.last_test_status='FAILED';saved.last_test_message=message;saved.last_test_at=datetime.now(timezone.utc);db.commit()
   raise HTTPException(502,message)
 def directory_candidate_dto(row,db):
@@ -697,7 +700,8 @@ def sync_directory(db:Session=Depends(session),u:User=Depends(permit('USER_MANAG
    candidate=DirectorySyncCandidate(run_id=run.id,external_id=external,username=username,display_name=value(display_name_attribute) or username,email=value(email_attribute),department=department,distinguished_name=distinguished_name,change_type='UPDATE' if rec else 'CREATE',role_code=rec.role.code if rec else role.code);db.add(candidate)
   connection.unbind();run.status='PENDING_CONFIRMATION';audit(db,u,'PREVIEW','active_directory',run.id,{'candidates':len(seen)});db.commit();return directory_candidates(run.id,db,u)
  except Exception as exc:
-  db.rollback();run=db.get(DirectorySyncRun,run.id);run.status='FAILED';run.error_message=str(exc)[:1000];run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(502,'AD同步失败：'+str(exc)[:200])
+  message=directory_error_message(exc)
+  db.rollback();run=db.get(DirectorySyncRun,run.id);run.status='FAILED';run.error_message=message;run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(502,'AD同步失败：'+message[:200])
 @app.post('/api/admin/directory/confirm')
 def confirm_directory(x:DirectoryConfirm,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  run=db.get(DirectorySyncRun,x.run_id)
