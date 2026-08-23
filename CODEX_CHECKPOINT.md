@@ -333,6 +333,7 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
+- LDAP error sanitization, frontend response fallback, login-domain validation, and 5.7.3 deployment checkpoint commit: `fbbe6eb` (`fix: sanitize LDAP errors and validate login domain`).
 - AD manual configuration implementation and deployment checkpoint commit: `c125f4c` (`feat: add manual AD directory configuration`).
 - Material/system-administration implementation commit: `41c6adf` (`feat: import official materials and add system administration`).
 - Local implementation commit: `1f1e0aa68aeafcf307a6234ede90cc7757165516` (`feat: add inline knowledge editing and asset permissions`).
@@ -340,6 +341,7 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
+- LDAP error hotfix source, frontend build assets, deployment state, and regression results are committed at `fbbe6eb`; no related application source remains uncommitted.
 - AD manual configuration implementation, migration, UI, deployed frontend assets, and deployment checkpoint are committed at `c125f4c`; no related application source remains uncommitted.
 - Material import, variant/commercial models, system administration, AD integration, migration `9d3f4a6b8c21`, and the runtime acceptance script are committed at `41c6adf`; only checkpoint updates and generated `frontend/tsconfig.tsbuildinfo` remain uncommitted among files touched by this phase.
 - Inline editing, image/document management, download permission, migration, and acceptance test implementation is committed at `1f1e0aa68aeafcf307a6234ede90cc7757165516`.
