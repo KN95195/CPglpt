@@ -2,21 +2,28 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-READY_FOR_PRODUCT_UI_REVIEW
+FORMAL_MATERIAL_IMPORT_AND_SYSTEM_ADMINISTRATION_ACCEPTANCE
 
 # CURRENT BUSINESS LOOP
-Implement the approved post-acceptance整改: preserve each detail page's visual layout while enabling same-page section editing across all six centers; add real image upload; add document upload/preview/download with independent backend download authorization. Execute CHANGE -> BUILD -> TEST -> FIX -> RETEST -> CHECKPOINT -> NEXT, preserve the live 5.5.1 baseline and rollback point, then deploy an immutable replacement and complete formal browser/RBAC acceptance.
+The approved 2026 product introduction and pricing workbook have been normalized and imported. Product variants, software/algorithm commercial fields, full user/role/permission administration, and AD/LDAP synchronization are deployed. API/RBAC/PRICE_VIEW/runtime acceptance passes; authenticated browser UI acceptance is the remaining verification step.
 
 # LAST SUCCESSFUL STEP
-IEA-005: Deployed immutable `haizhi-hub-api:5.6.3-inline-edit`, retained stopped `5.6.2` rollback, and passed isolated plus formal six-center CRUD/RBAC/PRICE_VIEW/BOM acceptance, image upload/read/delete, document upload/preview/download/delete, independent `DOCUMENT_DOWNLOAD` denial/allow checks, exact static chunk checks, hardened runtime checks, Alembic `6a9c2e7d4f31`, legacy port 80, formal health, and unauthenticated browser rendering with zero console warnings/errors. The final frontend fix strips read-only child-record IDs before inline PATCH payloads.
+MSA-008: Deployed immutable `haizhi-hub-api:5.7.0-material-admin`, migrated production to `9d3f4a6b8c21`, imported the formal material twice without duplication, passed formal user/role CRUD plus live PRICE_VIEW omission, configured the reachable AD server/base/domain metadata without storing a bind password, and preserved the stopped `5.6.3` rollback container.
 
 # CURRENT STEP
-COMPLETE
+MSA-009: Complete authenticated browser acceptance for System Administration, Product variant/commercial editing, and Software/Algorithm commercial sections.
 
 # NEXT EXACT STEP
-WAITING_FOR_PRODUCT_UI_REVIEW
+USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 
 # COMPLETED STEPS
+- MSA-008: Created verified PostgreSQL/MinIO predeployment backups, deployed immutable `5.7.0-material-admin`, migrated production, imported formal materials idempotently, configured AD discovery metadata, passed formal API/RBAC/PRICE_VIEW/runtime acceptance, synchronized formal source, and retained `5.6.3` rollback.
+- MSA-007: Passed a clean isolated migration downgrade/re-upgrade, material import twice, user CRUD, role CRUD, dynamic permission removal, PRICE_VIEW field omission, ordinary-user USER_MANAGE denial, AD-unconfigured failure audit, and cleanup.
+- MSA-006: Fixed the nested permission dependency runtime `NameError`, the variant import uniqueness conflict, clean-database USER_MANAGE bootstrap assignment, and ORM relationship warning; rebuilt immutable candidate after each correction.
+- MSA-005: Built `haizhi-hub-api:5.7.0-material-admin` from the locally compiled frontend runtime bundle after checksum-verified transfer.
+- MSA-004: Added product variants and software/algorithm commercial profiles plus same-page editing, formal-material idempotent import, system administration UI, user/role/permission APIs, environment-only AD synchronization, and interface-level PRICE_VIEW filtering.
+- MSA-003: Parsed and reconciled `海莱云智2026产品介绍（对外）.pdf` and `海莱云智产品配单工具表(修改0729)_2.xlsx` into the formal normalized import dataset.
+- MSA-001: Completed the current schema/API/UI/RBAC/LDAP boundary audit and fixed the incremental design.
 - IEA-005: Deployed immutable `haizhi-hub-api:5.6.3-inline-edit` with exact frontend bundle `index-BdlHTqbF.js`, retained stopped `5.6.2` rollback, and completed isolated/formal API, RBAC, PRICE_VIEW, asset, document, migration, runtime, port-80, and browser-rendering acceptance.
 - IEA-004: Corrected inline child-record PATCH serialization so database `id` fields are not sent to strict backend DTOs; local Vue type-check/Vite build emitted all required application/vendor chunks.
 - IEA-003: Added migration `6a9c2e7d4f31`, image and document object APIs, independent `DOCUMENT_DOWNLOAD` permission, role-permission update API, and isolated upgrade/downgrade/re-upgrade plus API acceptance coverage.
@@ -122,6 +129,10 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- MSA-008 formal: predeployment PostgreSQL/MinIO backups and SHA-256 PASS; health direct/gateway PASS; Alembic `9d3f4a6b8c21` PASS; exact `index-B2Oyoxph.js`/`index-PyoK1-X5.css` PASS; material import A/B identical and log-clean PASS; user/role CRUD PASS; USER_MANAGE denial PASS; PRICE_VIEW visible/removed/403 behavior PASS; temporary acceptance data cleanup PASS; source synchronization PASS; hardened UID 10001/read-only/cap-drop/no-new-privileges/two-network runtime PASS.
+- MSA-007 isolated: clean migration to head, downgrade to `6a9c2e7d4f31`, re-upgrade PASS; importer twice returned products=3, variants=12, software=5, algorithms=4, scenes=5, capabilities=2 without warning/error; variants=12 and commercial profiles=9; complete system administration and price-security acceptance PASS.
+- MSA-008 data quality: products=19, software=8, algorithms=14, capabilities=17, scenes=10, solutions=6, variants=12, commercial profiles=9, users=7, roles=7, permissions=30, dirty names=0.
+- MSA-008 AD discovery: `10.1.1.102` ports 389 and 636 reachable; anonymous RootDSE returned `DC=hilaicloud,DC=com` and `adserver.hilaicloud.com`; deployed server/base/domain/default-role/filter metadata without a bind credential.
 - IEA-005 formal: health PASS; Alembic `6a9c2e7d4f31` PASS; exact HTML/JS/CSS/Vue/Element chunks HTTP 200 PASS; six-center CRUD/RBAC/PRICE_VIEW/relation/BOM acceptance PASS; image upload/read/delete PASS; document upload/list/preview/download/delete PASS; ordinary-user download 403 PASS; manager download PASS; cleanup PASS; UID 10001/read-only/cap-drop/no-new-privileges/two-network runtime PASS; legacy port 80 HTTP 200 PASS; login page rendered with zero browser console warnings/errors.
 - IEA-005 isolated candidate: migration/startup and health PASS; exact static chunks PASS; six-center acceptance PASS; image/document/RBAC acceptance PASS; all created test data and objects cleaned up.
 - IEA-004 local final verification: `npm run build`, Python `compileall app migrations`, and `git diff --check` PASS. Final chunks: `index-BdlHTqbF.js`, `index-CFWYjkG5.css`, `element-C7nSBjN6.js`, `vue-DO8QNb4G.js`.
@@ -238,10 +249,16 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Moodle briefly became unavailable while correcting its health check because an overly broad replacement also changed the MariaDB probe. The MariaDB-native probe was restored, both containers were recreated against persistent volumes, and database/Moodle health plus gateway HTTP checks passed with course data preserved.
 
 # CURRENT ERRORS
-- No application-blocking errors remain.
+- No application-blocking code, migration, import, runtime, or API errors remain.
+- Authenticated browser UI acceptance awaits a user-performed login because credential entry cannot be automated without action-time approval.
+- Live AD synchronization cannot run until a read-only AD bind account DN and password are supplied through server environment secrets; the application correctly reports the integration as not fully configured.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
+- Fixed `permit()` indentation that caused a runtime `NameError` during dependency construction.
+- Replaced destructive variant-list replacement with model-code upsert so the official material importer is idempotent and preserves manually maintained variants.
+- Added `back_populates` to Product/ProductVariant and assigned USER_MANAGE during clean-database bootstrap.
+- Added reachable AD RootDSE metadata while keeping bind credentials out of code, artifacts, images, and browser-visible configuration.
 - Corrected the PostgreSQL permission-freeze migration ambiguity and canonical six-center CRUD/deletion cleanup paths; deployed immutable API `4.2`.
 - Replaced the broken Moodle `curl` health check with the image-native PHP probe and restored the MariaDB health check with `mariadb-admin`; both persistent services are healthy.
 - Removed visible and prefilled test credentials from login UI.
@@ -264,7 +281,9 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.6.3-inline-edit` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
+- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.7.0-material-admin` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
+- `haizhi-hub-api-v563-material-rollback-20260823`: stopped immutable rollback point on `haizhi-hub-api:5.6.3-inline-edit`.
+- `haizhi-570-candidate` and `haizhi-570-pg`: stopped after isolated migration/import/RBAC acceptance; retained temporarily as diagnostic evidence.
 - `haizhi-hub-api-v562-inline-rollback-20260823`: stopped retained rollback point on immutable `haizhi-hub-api:5.6.2-inline-edit`.
 - `haizhi-inline-candidate-563`, `haizhi-inline-candidate`, and `haizhi-inline-pg`: stopped after isolated acceptance; retained temporarily as non-running diagnostic records.
 - `haizhi-hub-gateway`: running on host port 443; connected to `haizhi-hub-net` and `haizhi-moodle-net`.
@@ -280,21 +299,23 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `6a9c2e7d4f31`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `9d3f4a6b8c21`.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.6.3-inline-edit` (image id `sha256:a92235ef31da566c76027783a6b2d8d02539a00061804950bae2726561c964db`; static bundle `/assets/index-BdlHTqbF.js`, stylesheet `/assets/index-CFWYjkG5.css`).
+- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.7.0-material-admin` (image id `sha256:7aa983680241fa87db2cff8eafea455fac4dfd3cb0e4fbda6a2eb0a061820fd0`; static bundle `/assets/index-B2Oyoxph.js`, stylesheet `/assets/index-PyoK1-X5.css`).
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
+- Material/system-administration implementation commit: `41c6adf` (`feat: import official materials and add system administration`).
 - Local implementation commit: `1f1e0aa68aeafcf307a6234ede90cc7757165516` (`feat: add inline knowledge editing and asset permissions`).
 - Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
+- Material import, variant/commercial models, system administration, AD integration, migration `9d3f4a6b8c21`, and the runtime acceptance script are committed at `41c6adf`; only checkpoint updates and generated `frontend/tsconfig.tsbuildinfo` remain uncommitted among files touched by this phase.
 - Inline editing, image/document management, download permission, migration, and acceptance test implementation is committed at `1f1e0aa68aeafcf307a6234ede90cc7757165516`.
 - Untracked design-review exports, render intermediates, extraction/build intermediates, and audit-only files remain intentionally excluded. They are user-owned or reproducible evidence and do not affect the deployed application.
 - `frontend/tsconfig.tsbuildinfo` remains intentionally uncommitted as generated build metadata.
@@ -313,10 +334,14 @@ WAITING_FOR_PRODUCT_UI_REVIEW
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- None for six-center business acceptance.
+- AD live synchronization requires a read-only bind DN and password from the domain administrator. Network, LDAPS port, RootDSE discovery, base DN, domain, sync code, failure audit, and UI/API are complete.
+- Authenticated browser acceptance requires the user to log into the already-open formal login page or explicitly approve credential entry at action time; API-level authenticated acceptance already passes.
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- Do not repeat the 5.7.0 clean migration/import/API/RBAC/PRICE_VIEW acceptance unless application or schema code changes; isolated and formal runs passed.
+- Do not repeat official material import to prove idempotency; two isolated and two formal consecutive imports passed. Future runs are allowed only when official source material changes.
+- Do not delete the stopped `haizhi-hub-api-v563-material-rollback-20260823` until business acceptance of 5.7.0.
 - While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_FINAL_DESIGN_REVIEW`, do not modify formal Vue/FastAPI code, models, migrations, database, formal CSS/tokens, Seed Data, deployment, services, or runtime pages. Do not start implementation until the user explicitly provides `DESIGN APPROVED`.
 - While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_DESIGN_REVIEW_R2`, do not code, execute/build migrations, deploy, mutate formal data, change running pages, or continue six-center implementation. Resume only after explicit `DESIGN APPROVED` or specific Round 2 design feedback.
 - While `NEXT EXACT STEP` is `WAITING_FOR_EXTERNAL_DESIGN_CORRECTION`, do not code, execute/build migrations, deploy, mutate formal data, or alter the running UI. Only design corrections are allowed until an explicit `DESIGN APPROVED` decision.
