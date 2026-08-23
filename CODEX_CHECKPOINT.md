@@ -329,13 +329,14 @@ ENTER_REAL_AD_BIND_CREDENTIALS_IN_UI_THEN_TEST_SAVE_ENABLE_AND_MANUALLY_SYNC_CAN
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
 - Local project branch: `feature/knowledge-centers-v3`.
+- AD manual configuration implementation and deployment checkpoint commit: `c125f4c` (`feat: add manual AD directory configuration`).
 - Material/system-administration implementation commit: `41c6adf` (`feat: import official materials and add system administration`).
 - Local implementation commit: `1f1e0aa68aeafcf307a6234ede90cc7757165516` (`feat: add inline knowledge editing and asset permissions`).
 - Local implementation acceptance commit: `afba5a0b7ef718a58d7c276b0bfb00bd5188932b`.
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
-- AD manual configuration implementation is locally saved in `backend/app/main.py`, `backend/app/models.py`, `backend/app/directory_crypto.py`, migration `7a8c9d0e1f23`, `backend/requirements.txt`, `frontend/src/components/SystemAdmin.vue`, and the deployed frontend asset set; it is pending the dedicated 5.7.2 Git commit at this checkpoint update.
+- AD manual configuration implementation, migration, UI, deployed frontend assets, and deployment checkpoint are committed at `c125f4c`; no related application source remains uncommitted.
 - Material import, variant/commercial models, system administration, AD integration, migration `9d3f4a6b8c21`, and the runtime acceptance script are committed at `41c6adf`; only checkpoint updates and generated `frontend/tsconfig.tsbuildinfo` remain uncommitted among files touched by this phase.
 - Inline editing, image/document management, download permission, migration, and acceptance test implementation is committed at `1f1e0aa68aeafcf307a6234ede90cc7757165516`.
 - Untracked design-review exports, render intermediates, extraction/build intermediates, and audit-only files remain intentionally excluded. They are user-owned or reproducible evidence and do not affect the deployed application.
