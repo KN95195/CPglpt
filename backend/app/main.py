@@ -54,6 +54,7 @@ class EmbeddingIn(BaseModel): input:str|list[str];model:str='local-hash-embeddin
 class RagIn(BaseModel): text:str;document_id:int|None=None;metadata:dict={}
 class RagSearch(BaseModel): query:str;limit:int=5
 class TrainingCourseIn(BaseModel): external_course_id:str;name:str=Field(min_length=2);summary:str='';launch_url:str;status:str='ACTIVE'
+class RolePermissionPatch(BaseModel): permissions:list[str]
 def user(c:HTTPAuthorizationCredentials|None=Depends(security),db:Session=Depends(session)):
  if not c:raise HTTPException(401,'请先登录')
  try:data=jwt.decode(c.credentials,settings.jwt_secret,algorithms=['HS256'])
@@ -149,28 +150,44 @@ def storage_health(u:User=Depends(user)):
  except Exception as e:
   raise HTTPException(503,'对象存储不可用') from e
 @app.get('/api/documents')
-def documents(db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_VIEW'))):
- return [{'id':x.id,'name':x.name,'mimeType':x.mime_type,'path':x.path,'productId':x.product_id,'sceneId':x.scene_id,'tenderId':x.tender_id,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(DocumentAsset).order_by(DocumentAsset.updated_at.desc()))]
+def documents(center_type:str|None=None,center_id:int|None=None,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_VIEW'))):
+ query=select(DocumentAsset)
+ if center_type is not None:query=query.where(DocumentAsset.center_type==center_type)
+ if center_id is not None:query=query.where(DocumentAsset.center_id==center_id)
+ can_download='DOCUMENT_DOWNLOAD' in permission_codes(u)
+ return [{'id':x.id,'name':x.name,'mimeType':x.mime_type,'path':x.path,'productId':x.product_id,'sceneId':x.scene_id,'tenderId':x.tender_id,'centerType':x.center_type,'centerId':x.center_id,'canPreview':True,'canDownload':can_download,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(query.order_by(DocumentAsset.updated_at.desc()))]
 @app.post('/api/documents',status_code=201)
-async def upload_document(file:UploadFile=File(...),product_id:int|None=Form(None),scene_id:int|None=Form(None),tender_id:int|None=Form(None),db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
+async def upload_document(file:UploadFile=File(...),product_id:int|None=Form(None),scene_id:int|None=Form(None),tender_id:int|None=Form(None),center_type:str|None=Form(None),center_id:int|None=Form(None),db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
  data=await file.read()
  if not data or len(data)>50*1024*1024: raise HTTPException(413,'文件为空或超过50MB')
  if product_id and not db.get(Product,product_id):raise HTTPException(422,'产品不存在')
  if scene_id and not db.get(Scene,scene_id):raise HTTPException(422,'场景不存在')
  if tender_id and not db.get(Tender,tender_id):raise HTTPException(422,'投标项目不存在')
+ if (center_type is None)!=(center_id is None):raise HTTPException(422,'知识中心类型和记录ID必须同时提供')
+ if center_type is not None:
+  model=RELATION_MODELS.get(center_type)
+  if not model:raise HTTPException(422,'知识中心类型无效')
+  if not db.get(model,center_id):raise HTTPException(422,'知识中心记录不存在')
  object_name=f'{uuid.uuid4().hex}-{os.path.basename(file.filename or "document")}'
  try: path=storage.put(object_name,data,file.content_type or 'application/octet-stream')
  except Exception as e: raise HTTPException(503,'对象存储不可用') from e
- rec=DocumentAsset(name=file.filename or object_name,path=path,mime_type=file.content_type or 'application/octet-stream',product_id=product_id,scene_id=scene_id,tender_id=tender_id);db.add(rec);db.flush();audit(db,u,'CREATE','document',rec.id,{'name':rec.name});db.commit();db.refresh(rec)
- return {'id':rec.id,'name':rec.name,'path':rec.path,'mimeType':rec.mime_type,'productId':rec.product_id,'sceneId':rec.scene_id,'tenderId':rec.tender_id}
-@app.get('/api/documents/{did}/download')
-def download_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_VIEW'))):
- rec=db.get(DocumentAsset,did)
- if not rec:raise HTTPException(404,'文件不存在')
+ rec=DocumentAsset(name=file.filename or object_name,path=path,mime_type=file.content_type or 'application/octet-stream',product_id=product_id,scene_id=scene_id,tender_id=tender_id,center_type=center_type,center_id=center_id);db.add(rec);db.flush();audit(db,u,'CREATE','document',rec.id,{'name':rec.name,'centerType':center_type,'centerId':center_id});db.commit();db.refresh(rec)
+ return {'id':rec.id,'name':rec.name,'path':rec.path,'mimeType':rec.mime_type,'productId':rec.product_id,'sceneId':rec.scene_id,'tenderId':rec.tender_id,'centerType':rec.center_type,'centerId':rec.center_id,'canPreview':True,'canDownload':'DOCUMENT_DOWNLOAD' in permission_codes(u)}
+def object_response(rec,disposition):
  try:
   response=storage.get(rec.path.split('/',1)[1]);data=response.read();response.close();response.release_conn()
  except Exception as exc:raise HTTPException(503,'对象存储不可用') from exc
- return Response(data,media_type=rec.mime_type,headers={'Content-Disposition':f"attachment; filename*=UTF-8''{urllib.parse.quote(rec.name)}",'Cache-Control':'no-store'})
+ return Response(data,media_type=rec.mime_type,headers={'Content-Disposition':f"{disposition}; filename*=UTF-8''{urllib.parse.quote(rec.name)}",'Cache-Control':'no-store'})
+@app.get('/api/documents/{did}/preview')
+def preview_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_VIEW'))):
+ rec=db.get(DocumentAsset,did)
+ if not rec:raise HTTPException(404,'文件不存在')
+ return object_response(rec,'inline')
+@app.get('/api/documents/{did}/download')
+def download_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_DOWNLOAD'))):
+ rec=db.get(DocumentAsset,did)
+ if not rec:raise HTTPException(404,'文件不存在')
+ return object_response(rec,'attachment')
 @app.delete('/api/documents/{did}',status_code=204)
 def delete_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
  rec=db.get(DocumentAsset,did)
@@ -178,6 +195,28 @@ def delete_document(did:int,db:Session=Depends(session),u:User=Depends(permit('D
  try:storage.delete(rec.path.split('/',1)[1])
  except Exception as exc:raise HTTPException(503,'对象存储不可用') from exc
  db.query(DocumentChunk).filter(DocumentChunk.document_id==did).delete();audit(db,u,'DELETE','document',did,{'name':rec.name});db.delete(rec);db.commit()
+@app.post('/api/media/images',status_code=201)
+async def upload_knowledge_image(file:UploadFile=File(...),db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ data=await file.read();mime=(file.content_type or '').lower()
+ if not mime.startswith('image/'):raise HTTPException(415,'仅支持图片文件')
+ if not data or len(data)>10*1024*1024:raise HTTPException(413,'图片为空或超过10MB')
+ public_id=uuid.uuid4().hex;object_name=f'knowledge-images/{public_id}-{os.path.basename(file.filename or "image")}'
+ try:path=storage.put(object_name,data,mime)
+ except Exception as exc:raise HTTPException(503,'对象存储不可用') from exc
+ rec=KnowledgeImage(public_id=public_id,name=file.filename or object_name,path=path,mime_type=mime,uploaded_by=u.id);db.add(rec);db.flush();audit(db,u,'CREATE','knowledge_image',rec.id,{'name':rec.name});db.commit()
+ return {'id':rec.id,'name':rec.name,'mimeType':rec.mime_type,'url':f'/api/media/images/{rec.public_id}'}
+@app.get('/api/media/images/{public_id}')
+def knowledge_image(public_id:str,db:Session=Depends(session)):
+ rec=db.scalar(select(KnowledgeImage).where(KnowledgeImage.public_id==public_id))
+ if not rec:raise HTTPException(404,'图片不存在')
+ return object_response(rec,'inline')
+@app.delete('/api/media/images/{public_id}',status_code=204)
+def delete_knowledge_image(public_id:str,db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_MANAGE'))):
+ rec=db.scalar(select(KnowledgeImage).where(KnowledgeImage.public_id==public_id))
+ if not rec:raise HTTPException(404,'图片不存在')
+ try:storage.delete(rec.path.split('/',1)[1])
+ except Exception as exc:raise HTTPException(503,'对象存储不可用') from exc
+ audit(db,u,'DELETE','knowledge_image',rec.id,{'name':rec.name});db.delete(rec);db.commit()
 @app.get('/api/tenders')
 def tenders(db:Session=Depends(session),u:User=Depends(permit('TENDER_VIEW'))):
  return [{'id':x.id,'name':x.name,'customer':x.customer,'deadline':x.deadline.isoformat() if x.deadline else None,'status':x.status,'summary':x.summary,'documentCount':db.scalar(select(func.count(DocumentAsset.id)).where(DocumentAsset.tender_id==x.id)),'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(Tender).order_by(Tender.updated_at.desc()))]
@@ -499,6 +538,17 @@ def delete_project(pid:int,db:Session=Depends(session),u:User=Depends(permit('BO
 @app.get('/api/admin/roles')
 def roles(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  return [{'code':x.code,'name':x.name,'permissions':sorted({p.permission.code for p in x.permission_links} or {p for p in x.permissions.split(',') if p})} for x in db.scalars(select(Role).order_by(Role.code))]
+@app.patch('/api/admin/roles/{role_code}/permissions')
+def update_role_permissions(role_code:str,x:RolePermissionPatch,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ role=db.scalar(select(Role).where(Role.code==role_code))
+ if not role:raise HTTPException(404,'角色不存在')
+ requested=set(x.permissions);available={p.code:p for p in db.scalars(select(Permission).where(Permission.code.in_(requested)))}
+ missing=requested-set(available)
+ if missing:raise HTTPException(422,'权限不存在：'+','.join(sorted(missing)))
+ role.permission_links.clear();db.flush()
+ for code in sorted(requested):role.permission_links.append(RolePermission(permission=available[code]))
+ role.permissions=','.join(sorted(requested));audit(db,u,'UPDATE','role_permissions',role.id,{'permissions':sorted(requested)});db.commit()
+ return {'code':role.code,'name':role.name,'permissions':sorted(requested)}
 @app.get('/api/training/courses')
 def training_courses(db:Session=Depends(session),u:User=Depends(permit('TRAINING_VIEW'))):
  return [{'id':x.id,'externalCourseId':x.external_course_id,'name':x.name,'summary':x.summary,'launchUrl':x.launch_url,'status':x.status,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(TrainingCourse).order_by(TrainingCourse.updated_at.desc()))]

@@ -153,6 +153,7 @@ class ProductUpdate(Payload):
     features: list[FeaturePayload] | None = None
     boundaries: list[str] | None = None
     parameters: list[ProductParameterPayload] | None = None
+    tenderParameters: list[ProductParameterPayload] | None = Field(default=None, alias='tender_parameters')
 
     @field_validator('productType')
     @classmethod
@@ -408,6 +409,7 @@ class SolutionPayload(Payload):
     tier: str = 'STANDARD'
     status: str = 'ACTIVE'
     summary: str = ''
+    coverImage: str = Field(default='', alias='cover_image')
     targetDescription: str = Field(default='', alias='target_description')
     coverageScope: str = Field(default='', alias='coverage_scope')
     implementationNotes: str = Field(default='', alias='implementation_notes')
@@ -423,6 +425,7 @@ class SolutionPatch(Payload):
     tier: str | None = None
     status: str | None = None
     summary: str | None = None
+    coverImage: str | None = Field(default=None, alias='cover_image')
     targetDescription: str | None = Field(default=None, alias='target_description')
     coverageScope: str | None = Field(default=None, alias='coverage_scope')
     implementationNotes: str | None = Field(default=None, alias='implementation_notes')
@@ -501,6 +504,7 @@ def product_dto(product: Product, db: Session, user: User, detail=False):
             'gallery': [media_dto(x) for x in product.gallery],
             'features': [{'id': x.id, 'title': x.title, 'description': x.description, 'icon': x.icon, 'sortOrder': x.sort_order} for x in product.features],
             'owner': product.owner, 'source': product.source,
+            'tenderParameters': json_value(product.tender_parameters_json, []),
             'relations': relation_rows('products', product.id, db),
         }
     return result
@@ -572,7 +576,7 @@ def bom_dto(solution_id: int, db: Session, user: User):
 
 
 def solution_dto(record: Solution, db: Session, user: User, detail=False):
-    result = {'id': record.id, 'name': record.name, 'code': record.code, 'category': record.category, 'sceneId': record.scene_id, 'scene': record.scene.name, 'tier': record.tier, 'status': record.status, 'summary': record.summary, 'coverageScope': record.coverage_scope, 'coverageCount': len(record.capability_coverage), 'architectureCount': len(record.architecture), 'bomCount': db.scalar(select(func.count(SolutionBomItem.id)).where(SolutionBomItem.solution_id == record.id)) or 0, 'updatedAt': record.updated_at.isoformat()}
+    result = {'id': record.id, 'name': record.name, 'code': record.code, 'category': record.category, 'sceneId': record.scene_id, 'scene': record.scene.name, 'tier': record.tier, 'status': record.status, 'summary': record.summary, 'coverImage': record.cover_image, 'coverageScope': record.coverage_scope, 'coverageCount': len(record.capability_coverage), 'architectureCount': len(record.architecture), 'bomCount': db.scalar(select(func.count(SolutionBomItem.id)).where(SolutionBomItem.solution_id == record.id)) or 0, 'updatedAt': record.updated_at.isoformat()}
     if detail:
         result |= {'targetDescription': record.target_description, 'coverageScope': record.coverage_scope, 'implementationNotes': record.implementation_notes, 'architecture': [{'id': x.id, 'layer': x.layer, 'name': x.name, 'description': x.description, 'relationType': x.relation_type, 'relationId': x.relation_id, 'sortOrder': x.sort_order} for x in record.architecture], 'capabilityCoverage': [{'id': x.id, 'capabilityName': x.capability_name, 'status': x.status, 'implementation': x.implementation, 'relationObjects': json_value(x.relation_objects_json, []), 'notes': x.notes, 'sortOrder': x.sort_order} for x in record.capability_coverage], 'relations': relation_rows('solutions', record.id, db), 'bom': bom_dto(record.id, db, user)}
     return result
@@ -586,6 +590,8 @@ def replace_product_children(record: Product, data: dict):
         record.gallery = [ProductMedia(image=x.image, title=x.title, sort_order=x.sortOrder) for x in data.pop('gallery')]
     if 'features' in data:
         record.features = [ProductFeature(title=x.title, description=x.description, icon=x.icon, sort_order=x.sortOrder) for x in data.pop('features')]
+    if 'tenderParameters' in data:
+        record.tender_parameters_json = json_text([x.model_dump(by_alias=False) for x in data.pop('tenderParameters')])
 
 
 @router.get('/products')
@@ -718,7 +724,7 @@ def replace_scene(record: Scene, payload: ScenePayload):
 
 
 def replace_solution(record: Solution, payload: SolutionPayload):
-    record.name=payload.name; record.code=payload.code; record.category=payload.category; record.scene_id=payload.sceneId; record.tier=payload.tier; record.status=payload.status; record.summary=payload.summary; record.target_description=payload.targetDescription; record.coverage_scope=payload.coverageScope; record.implementation_notes=payload.implementationNotes
+    record.name=payload.name; record.code=payload.code; record.category=payload.category; record.scene_id=payload.sceneId; record.tier=payload.tier; record.status=payload.status; record.summary=payload.summary; record.cover_image=payload.coverImage; record.target_description=payload.targetDescription; record.coverage_scope=payload.coverageScope; record.implementation_notes=payload.implementationNotes
     record.architecture=[SolutionArchitectureNode(layer=x.layer,name=x.name,description=x.description,relation_type=x.relationType,relation_id=x.relationId,sort_order=x.sortOrder) for x in payload.architecture]
     record.capability_coverage=[SolutionCapabilityCoverage(capability_name=x.capabilityName,status=x.status,implementation=x.implementation,relation_objects_json=json_text(x.relationObjects),notes=x.notes,sort_order=x.sortOrder) for x in payload.capabilityCoverage]
     record.architecture_summary='；'.join(f'{x.layer}:{x.name}' for x in payload.architecture)

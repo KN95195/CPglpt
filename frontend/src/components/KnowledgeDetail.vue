@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, ref, watch } from 'vue'
 import { ArrowLeft, Connection, Delete, Edit, Plus, Refresh } from '@element-plus/icons-vue'
+import InlineKnowledgeEditor from './InlineKnowledgeEditor.vue'
+import DocumentAssets from './DocumentAssets.vue'
 
 const props = withDefaults(defineProps<{
   centerTitle: string
@@ -10,9 +12,15 @@ const props = withDefaults(defineProps<{
   error?: string
   canManage?: boolean
   showPrice?: boolean
-}>(), { loading:false, error:'', canManage:false, showPrice:false })
-const emit = defineEmits<{ back:[]; edit:[]; delete:[]; relate:[]; editBom:[]; retry:[]; openRelation:[relation:any] }>()
+  canDownload?: boolean
+  startEditing?: boolean
+}>(), { loading:false, error:'', canManage:false, showPrice:false, canDownload:false, startEditing:false })
+const emit = defineEmits<{ back:[]; edit:[]; save:[value:any]; delete:[]; relate:[]; editBom:[]; retry:[]; openRelation:[relation:any] }>()
 const activeTab = ref('overview')
+const editing = ref(false)
+const beginEdit=()=>{editing.value=true}
+const cancelEdit=()=>{editing.value=false}
+const saveInline=(value:any)=>{emit('save',value);editing.value=false}
 const statusLabel = (value?:string) => ({SUPPORTED:'正式支持',ON_SALE:'在售',OFF_SALE:'停售',ACTIVE:'启用',PUBLISHED:'已发布',DRAFT:'草稿',BETA:'Beta',DISABLED:'停用',PLANNING:'规划中'} as Record<string,string>)[value||''] || '状态待确认'
 const typeLabel = (value?:string) => ({PLATFORM:'平台软件',CLIENT:'客户端软件',SERVICE:'服务组件',PRIVATE:'私有化部署',CLOUD:'云端部署',HYBRID:'混合部署',DETECTION:'目标检测',OCR:'文字识别',CLASSIFICATION:'分类',SEGMENTATION:'分割',TRACKING:'跟踪',TIME_SERIES:'时序分析',DATA_MODEL:'数据模型',MULTIMODAL:'多模态',FUSION:'融合',STANDARD:'标准型',ENHANCED:'增强型',FLAGSHIP:'旗舰型'} as Record<string,string>)[value||''] || value || '-'
 const relationGroups = computed(() => Object.fromEntries(['products','software','algorithms','model-capabilities','scenes','solutions'].map((type) => [type,(props.record?.relations||[]).filter((item:any) => item.type===type)])))
@@ -25,18 +33,19 @@ const sceneImage = computed(() => {
   return image && !isUiMockup ? image : '/assets/bridge-ship-waterway.jpg'
 })
 const tabs = computed(() => {
-  if(props.centerKey==='software') return [['overview','软件概览'],['functions','系统功能'],['versions','版本信息'],['deployment','部署要求'],['relations','设备/算法/模型/场景'],['boundaries','能力边界'],['screenshots','软件截图']]
-  if(props.centerKey==='algorithms') return [['overview','算法概览'],['principle','算法原理'],['input','输入数据'],['output','输出结果'],['parameters','核心参数'],['metrics','性能指标'],['relations','关联知识'],['boundaries','能力边界']]
-  if(props.centerKey==='model-capabilities') return [['overview','模型概览'],['metrics','性能指标'],['input','输入要求'],['output','输出定义'],['deployment','部署规格'],['relations','硬件/算法/软件/场景'],['boundaries','能力边界']]
-  if(props.centerKey==='scenes') return [['overview','场景概览'],['pains','业务痛点'],['goals','建设目标'],['conditions','关键条件'],['matrix','能力矩阵'],['process','业务流程'],['products','推荐产品'],['solutions','标准方案']]
-  return [['overview','方案概览'],['conditions','适用条件'],['architecture','系统架构'],['composition','系统组成'],['coverage','能力覆盖'],['bom','标准BOM']]
+  if(props.centerKey==='software') return [['overview','软件概览'],['functions','系统功能'],['versions','版本信息'],['deployment','部署要求'],['relations','设备/算法/模型/场景'],['boundaries','能力边界'],['screenshots','软件截图'],['documents','相关资料']]
+  if(props.centerKey==='algorithms') return [['overview','算法概览'],['principle','算法原理'],['input','输入数据'],['output','输出结果'],['parameters','核心参数'],['metrics','性能指标'],['relations','关联知识'],['boundaries','能力边界'],['documents','相关资料']]
+  if(props.centerKey==='model-capabilities') return [['overview','模型概览'],['metrics','性能指标'],['input','输入要求'],['output','输出定义'],['deployment','部署规格'],['relations','硬件/算法/软件/场景'],['boundaries','能力边界'],['documents','相关资料']]
+  if(props.centerKey==='scenes') return [['overview','场景概览'],['pains','业务痛点'],['goals','建设目标'],['conditions','关键条件'],['matrix','能力矩阵'],['process','业务流程'],['products','推荐产品'],['solutions','标准方案'],['documents','相关资料']]
+  return [['overview','方案概览'],['conditions','适用条件'],['architecture','系统架构'],['composition','系统组成'],['coverage','能力覆盖'],['bom','标准BOM'],['documents','相关资料']]
 })
 const relationLabel = (type:string) => ({products:'产品',software:'软件',algorithms:'算法','model-capabilities':'模型能力',scenes:'场景',solutions:'方案'} as Record<string,string>)[type] || type
 const requirementLabel = (value?:string) => ({REQUIRED:'必需',RECOMMENDED:'推荐',OPTIONAL:'可选',CORE:'核心'} as Record<string,string>)[value||''] || '推荐'
 const coverageLabel = (value?:string) => ({COVERED:'已覆盖',OPTIONAL:'可选',NOT_COVERED:'未覆盖'} as Record<string,string>)[value||''] || value || '-'
 const layerOrder = ['感知层','边缘智能层','平台层','业务应用层']
 const architectureGroups = computed(() => layerOrder.map((layer) => ({layer,items:(props.record?.architecture||[]).filter((item:any) => item.layer===layer)})).filter((group) => group.items.length))
-watch(() => props.record?.id, () => { activeTab.value='overview' })
+watch(() => props.record?.id, () => { activeTab.value='overview';editing.value=props.startEditing })
+watch(() => props.startEditing, (value) => {if(value)editing.value=true})
 const BoundaryItems = defineComponent({props:{items:{type:Array,default:()=>[]}},setup(boundaryProps){return()=>h('div',{class:'boundary-items'},(boundaryProps.items as string[]).map((item,index)=>h('article',[h('span',String(index+1)),h('p',item)])))}})
 const RelationPanel = defineComponent({props:{groups:{type:Object,required:true},canManage:Boolean},emits:['open','relate'],setup(panelProps,{emit:panelEmit}){const labels:any={products:'产品',software:'软件',algorithms:'算法','model-capabilities':'模型能力',scenes:'场景',solutions:'方案'};return()=>h('section',{class:'content-section relation-panel'},[h('div',{class:'section-head'},[h('div',[h('h2','关联知识'),h('p','统一关系底座双向读取。')]),panelProps.canManage?h('button',{class:'native-action',onClick:()=>panelEmit('relate')},'维护关系'):null]),h('div',{class:'relation-panel-grid'},Object.entries(panelProps.groups as any).flatMap(([type,items]:any)=>(items as any[]).map((item:any)=>h('button',{onClick:()=>panelEmit('open',item)},[h('small',labels[type]||type),h('strong',item.name),h('span',item.meta?.purpose||item.summary||'查看详情')]))))])}})
 </script>
@@ -55,11 +64,13 @@ const RelationPanel = defineComponent({props:{groups:{type:Object,required:true}
 
       <header v-else-if="centerKey==='scenes'" class="scene-hero" :style="{backgroundImage:`linear-gradient(90deg,rgba(10,31,50,.88),rgba(10,31,50,.14)),url(${sceneImage})`}"><div class="hero-copy"><div class="eyebrow">{{ record.category }} / {{ record.tags?.join(' · ') }}</div><h1>{{ record.name }}</h1><p>{{ record.summary }}</p><div class="scene-stats"><strong>核心能力 {{ relationGroups['model-capabilities']?.length||0 }} 项</strong><strong>推荐产品 {{ relationGroups.products?.length||0 }} 个</strong><strong>标准方案 {{ relationGroups.solutions?.length||0 }} 套</strong></div></div><div class="hero-actions compact"><el-button v-if="canManage" type="primary" :icon="Edit" @click="emit('edit')">编辑场景</el-button><el-button v-if="canManage" text type="danger" :icon="Delete" @click="emit('delete')">删除</el-button></div></header>
 
-      <header v-else class="hero solution-hero"><div class="solution-visual"><img src="/assets/solution-overview.png" :alt="record.name"></div><div class="hero-copy"><div class="eyebrow">{{ record.scene }} / {{ typeLabel(record.tier) }}</div><h1>{{ record.name }}</h1><div class="identity"><strong>{{ record.code }}</strong><span>{{ typeLabel(record.tier) }}</span><el-tag type="success" effect="plain">{{ statusLabel(record.status) }}</el-tag></div><p>{{ record.summary }}</p><div class="hero-metrics"><div><strong>{{ record.coverageScope || '范围待确认' }}</strong><span>适用范围</span></div><div><strong>{{ record.capabilityCoverage?.length||0 }} 项</strong><span>能力覆盖</span></div><div><strong>{{ record.bom?.items?.length||0 }} 类</strong><span>标准配置</span></div></div></div><div class="hero-actions"><el-button v-if="canManage" type="primary" :icon="Edit" @click="emit('edit')">编辑方案</el-button><div v-if="showPrice" class="price-panel"><span>产品参考总价</span><strong>{{ record.bom?.currency==='CNY'?'¥':'' }} {{ Number(record.bom?.productReferenceTotal||0).toLocaleString() }}</strong><small>仅 PRICE_VIEW 可见</small></div><el-button v-if="canManage" text type="danger" :icon="Delete" @click="emit('delete')">删除方案</el-button></div></header>
+      <header v-else class="hero solution-hero"><div class="solution-visual"><img :src="record.coverImage||'/assets/solution-overview.png'" :alt="record.name"></div><div class="hero-copy"><div class="eyebrow">{{ record.scene }} / {{ typeLabel(record.tier) }}</div><h1>{{ record.name }}</h1><div class="identity"><strong>{{ record.code }}</strong><span>{{ typeLabel(record.tier) }}</span><el-tag type="success" effect="plain">{{ statusLabel(record.status) }}</el-tag></div><p>{{ record.summary }}</p><div class="hero-metrics"><div><strong>{{ record.coverageScope || '范围待确认' }}</strong><span>适用范围</span></div><div><strong>{{ record.capabilityCoverage?.length||0 }} 项</strong><span>能力覆盖</span></div><div><strong>{{ record.bom?.items?.length||0 }} 类</strong><span>标准配置</span></div></div></div><div class="hero-actions"><el-button v-if="canManage" type="primary" :icon="Edit" @click="emit('edit')">编辑方案</el-button><div v-if="showPrice" class="price-panel"><span>产品参考总价</span><strong>{{ record.bom?.currency==='CNY'?'¥':'' }} {{ Number(record.bom?.productReferenceTotal||0).toLocaleString() }}</strong><small>仅 PRICE_VIEW 可见</small></div><el-button v-if="canManage" text type="danger" :icon="Delete" @click="emit('delete')">删除方案</el-button></div></header>
 
       <nav class="detail-tabs"><button v-for="tab in tabs" :key="tab[0]" :class="{active:activeTab===tab[0]}" @click="activeTab=tab[0]">{{ tab[1] }}</button></nav>
+      <InlineKnowledgeEditor v-if="editing&&!['relations','documents','products','solutions'].includes(activeTab)" :center-key="centerKey" :record="record" :active-tab="activeTab" @save="saveInline" @cancel="cancelEdit"/>
+      <div v-else-if="editing" class="edit-banner"><span>关系与资料使用本板块专用维护控件。</span><el-button @click="cancelEdit">退出编辑</el-button></div>
 
-      <main class="detail-content">
+      <main v-show="!editing||['relations','documents','products','solutions'].includes(activeTab)" class="detail-content">
         <template v-if="centerKey==='software'">
           <section v-if="activeTab==='overview' || activeTab==='functions'" class="content-section"><div class="section-head"><div><h2>系统功能</h2><p>模块与子功能为软件技术资产的正式事实源。</p></div><span>{{ record.modules?.length||0 }} 模块 · {{ record.modules?.reduce((n:number,m:any)=>n+(m.features?.length||0),0)||0 }} 功能</span></div><div class="module-matrix"><article v-for="(module,index) in record.modules" :key="module.id||module.name"><span>{{ String(index+1).padStart(2,'0') }}</span><div><h3>{{ module.name }}</h3><p>{{ module.description }}</p><ul><li v-for="feature in module.features" :key="feature.id||feature.name">{{ feature.name }}<small>{{ feature.description }}</small></li></ul></div></article></div><el-empty v-if="!record.modules?.length" description="暂无功能模块"/></section>
           <section v-if="activeTab==='overview' || activeTab==='relations'" class="relation-band"><article v-for="type in ['products','algorithms','model-capabilities','scenes']" :key="type"><h3>{{ relationLabel(type) }}</h3><button v-for="relation in relationGroups[type]" :key="relation.id" @click="emit('openRelation',relation)">{{ relation.name }}</button><span v-if="!relationGroups[type]?.length">暂无关联</span></article></section>
@@ -100,6 +111,7 @@ const RelationPanel = defineComponent({props:{groups:{type:Object,required:true}
           <section v-if="activeTab==='overview' || activeTab==='coverage'" class="content-section"><div class="section-head"><div><h2>能力覆盖</h2><p>明确覆盖状态、实现方式与关联对象。</p></div></div><el-table :data="record.capabilityCoverage||[]"><el-table-column prop="capabilityName" label="能力名称"/><el-table-column label="覆盖状态"><template #default="scope"><el-tag :type="scope.row.status==='COVERED'?'success':'info'" effect="plain">{{ coverageLabel(scope.row.status) }}</el-tag></template></el-table-column><el-table-column prop="implementation" label="实现方式"/><el-table-column label="关联对象"><template #default="scope">{{ scope.row.relationObjects?.join('、')||'-' }}</template></el-table-column><el-table-column prop="notes" label="备注"/></el-table></section>
           <section v-if="activeTab==='bom'" class="content-section"><div class="section-head"><div><h2>标准BOM</h2><p>引用产品中心真实产品与主型号。</p></div><el-button v-if="canManage" :icon="Edit" @click="emit('editBom')">编辑BOM</el-button></div><el-table :data="record.bom?.items||[]"><el-table-column prop="product" label="产品"/><el-table-column prop="primaryModel" label="型号"/><el-table-column prop="quantity" label="数量" width="70"/><el-table-column prop="unit" label="单位" width="70"/><el-table-column prop="purpose" label="用途"/><el-table-column label="要求"><template #default="scope">{{ requirementLabel(scope.row.requirementLevel) }}</template></el-table-column><el-table-column prop="recommendationReason" label="推荐理由"/><el-table-column v-if="showPrice" label="单价"><template #default="scope">{{ scope.row.unitPrice==null?'-':'¥ '+Number(scope.row.unitPrice).toLocaleString() }}</template></el-table-column><el-table-column v-if="showPrice" label="小计"><template #default="scope">{{ scope.row.subtotal==null?'-':'¥ '+Number(scope.row.subtotal).toLocaleString() }}</template></el-table-column></el-table><div v-if="showPrice" class="bom-total">产品参考总价 <strong>¥ {{ Number(record.bom?.productReferenceTotal||0).toLocaleString() }}</strong></div></section>
         </template>
+        <section v-if="activeTab==='documents'" class="content-section"><DocumentAssets :center-type="centerKey" :center-id="record.id" :can-manage="canManage" :can-download="canDownload"/></section>
       </main>
     </template>
   </section>
