@@ -2,21 +2,25 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-FORMAL_MATERIAL_IMPORT_AND_SYSTEM_ADMINISTRATION_ACCEPTANCE
+AD_MANUAL_APPROVAL_PRODUCTION_DEPLOYMENT
 
 # CURRENT BUSINESS LOOP
-The approved 2026 product introduction and pricing workbook have been normalized and imported. Product variants, software/algorithm commercial fields, full user/role/permission administration, and AD/LDAP synchronization are deployed. API/RBAC/PRICE_VIEW/runtime acceptance passes; authenticated browser UI acceptance is the remaining verification step.
+AD synchronization now follows an administrator-controlled two-step workflow: read directory users into a pending candidate batch, then save only checked users with a selected Chinese role. Unchecked users cannot log in, and later directory changes require another manual read and confirmation. Version 5.7.1 is deployed; live directory reading awaits a read-only AD bind account.
 
 # LAST SUCCESSFUL STEP
-MSA-008: Deployed immutable `haizhi-hub-api:5.7.0-material-admin`, migrated production to `9d3f4a6b8c21`, imported the formal material twice without duplication, passed formal user/role CRUD plus live PRICE_VIEW omission, configured the reachable AD server/base/domain metadata without storing a bind password, and preserved the stopped `5.6.3` rollback container.
+AD-APPROVAL-006: Backed up formal PostgreSQL and MinIO with SHA-256 checksums, migrated production to `2f7b6c8d9e10`, deployed hardened immutable `haizhi-hub-api:5.7.1-ad-approval`, passed health, and retained stopped `5.7.0` as the immediate rollback container.
 
 # CURRENT STEP
-MSA-009: Complete authenticated browser acceptance for System Administration, Product variant/commercial editing, and Software/Algorithm commercial sections.
+AD-APPROVAL-007: Configure a domain read-only Bind DN/password in server environment secrets and run the first live AD candidate read without approving any user automatically.
 
 # NEXT EXACT STEP
-USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
+CONFIGURE_READ_ONLY_AD_BIND_CREDENTIALS_THEN_RUN_LIVE_AD_CANDIDATE_SYNC
 
 # COMPLETED STEPS
+- AD-APPROVAL-006: Created formal PostgreSQL backup `pre-571-20260823-181113.dump` and MinIO backup `pre-571-minio-20260823-181135.tgz`, verified checksums, migrated production to `2f7b6c8d9e10`, deployed `haizhi-hub-api:5.7.1-ad-approval`, passed health, and retained `haizhi-hub-api-v570-adrollback-20260823`.
+- AD-APPROVAL-005: Passed isolated manual-approval acceptance with marker `AD_MANUAL_APPROVAL_ACCEPTANCE_PASS`: Chinese role validation, English role-name rejection, candidate batch retrieval, selected-only account creation, unselected-user exclusion, existing AD-user update after reconfirmation, and cleanup.
+- AD-APPROVAL-004: Added pending directory candidate persistence and the `/api/admin/directory/sync`, `/candidates`, and `/confirm` two-step workflow; synchronization no longer directly creates or updates login accounts.
+- AD-APPROVAL-003: Reworked System Administration to show an administrator candidate table with selection, per-user Chinese role assignment, and explicit confirmation; role codes and English permission codes are hidden from users.
 - MSA-008: Created verified PostgreSQL/MinIO predeployment backups, deployed immutable `5.7.0-material-admin`, migrated production, imported formal materials idempotently, configured AD discovery metadata, passed formal API/RBAC/PRICE_VIEW/runtime acceptance, synchronized formal source, and retained `5.6.3` rollback.
 - MSA-007: Passed a clean isolated migration downgrade/re-upgrade, material import twice, user CRUD, role CRUD, dynamic permission removal, PRICE_VIEW field omission, ordinary-user USER_MANAGE denial, AD-unconfigured failure audit, and cleanup.
 - MSA-006: Fixed the nested permission dependency runtime `NameError`, the variant import uniqueness conflict, clean-database USER_MANAGE bootstrap assignment, and ORM relationship warning; rebuilt immutable candidate after each correction.
@@ -129,6 +133,8 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- AD-APPROVAL-006 formal: PostgreSQL backup SHA-256 `042266a46bc48a5db1ed2c1fdec291e3f8f8c4a47fe8ecd88a52f53a129ba24f`; MinIO backup SHA-256 `180aeaf8e6378defef8920e9381af25776f311aadded72eb6af7a8abfb9aac4a`; Alembic `2f7b6c8d9e10`; hardened image `haizhi-hub-api:5.7.1-ad-approval`; direct health PASS; `5.7.0` rollback retained.
+- AD-APPROVAL-005 isolated: `AD_MANUAL_APPROVAL_ACCEPTANCE_PASS`; built-in roles all use Chinese names; English role names return 422; only checked candidates become login accounts; unchecked candidates remain absent; existing AD users update only after a later explicit confirmation; test records cleaned.
 - MSA-008 formal: predeployment PostgreSQL/MinIO backups and SHA-256 PASS; health direct/gateway PASS; Alembic `9d3f4a6b8c21` PASS; exact `index-B2Oyoxph.js`/`index-PyoK1-X5.css` PASS; material import A/B identical and log-clean PASS; user/role CRUD PASS; USER_MANAGE denial PASS; PRICE_VIEW visible/removed/403 behavior PASS; temporary acceptance data cleanup PASS; source synchronization PASS; hardened UID 10001/read-only/cap-drop/no-new-privileges/two-network runtime PASS.
 - MSA-007 isolated: clean migration to head, downgrade to `6a9c2e7d4f31`, re-upgrade PASS; importer twice returned products=3, variants=12, software=5, algorithms=4, scenes=5, capabilities=2 without warning/error; variants=12 and commercial profiles=9; complete system administration and price-security acceptance PASS.
 - MSA-008 data quality: products=19, software=8, algorithms=14, capabilities=17, scenes=10, solutions=6, variants=12, commercial profiles=9, users=7, roles=7, permissions=30, dirty names=0.
@@ -241,6 +247,7 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
+- Live AD user enumeration remains unexecuted because anonymous directory search is denied and no read-only Bind DN/password has been provided. RootDSE and ports 389/636 are reachable; this is an external credential dependency, not an application failure.
 - V3-D12 local execution of `tests/v3_price_security.py` could not start because both available Windows Python runtimes lack the installed SQLAlchemy dependency; the test itself compiles and must run inside the API image after deployment.
 - External `http://10.1.2.1:18080/` is blocked by firewall; port 443 is used as the temporary formal entry.
 - HTTP `HEAD /` returns 405 because the static catch-all supports GET; GET root passed.
@@ -250,11 +257,12 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
-- Authenticated browser UI acceptance awaits a user-performed login because credential entry cannot be automated without action-time approval.
 - Live AD synchronization cannot run until a read-only AD bind account DN and password are supplied through server environment secrets; the application correctly reports the integration as not fully configured.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
+- Changed AD synchronization from direct account mutation to pending candidate batches plus selected-only confirmation, so administrators explicitly control who may log in.
+- Added Chinese-only role-name validation and localized all built-in role and permission display names; frontend role codes and permission codes are no longer exposed.
 - Fixed `permit()` indentation that caused a runtime `NameError` during dependency construction.
 - Replaced destructive variant-list replacement with model-code upsert so the official material importer is idempotent and preserves manually maintained variants.
 - Added `back_populates` to Product/ProductVariant and assigned USER_MANAGE during clean-database bootstrap.
@@ -281,7 +289,9 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.7.0-material-admin` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, no-new-privileges, connected to `haizhi-hub-net` and Dify `docker_default`.
+- `haizhi-hub-api`: running as hardened `haizhi-hub-api:5.7.1-ad-approval` on host port 18080; UID/GID 10001, read-only rootfs, all Linux capabilities dropped, and no-new-privileges.
+- `haizhi-hub-api-v570-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.0-material-admin`.
+- `haizhi-571-candidate` and `haizhi-571-pg`: isolated acceptance resources; candidate health, migration downgrade/re-upgrade, and manual approval workflow passed.
 - `haizhi-hub-api-v563-material-rollback-20260823`: stopped immutable rollback point on `haizhi-hub-api:5.6.3-inline-edit`.
 - `haizhi-570-candidate` and `haizhi-570-pg`: stopped after isolated migration/import/RBAC acceptance; retained temporarily as diagnostic evidence.
 - `haizhi-hub-api-v562-inline-rollback-20260823`: stopped retained rollback point on immutable `haizhi-hub-api:5.6.2-inline-edit`.
@@ -299,10 +309,10 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `9d3f4a6b8c21`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `2f7b6c8d9e10`.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.7.0-material-admin` (image id `sha256:7aa983680241fa87db2cff8eafea455fac4dfd3cb0e4fbda6a2eb0a061820fd0`; static bundle `/assets/index-B2Oyoxph.js`, stylesheet `/assets/index-PyoK1-X5.css`).
+- Formal backend/frontend deployed: hardened immutable `haizhi-hub-api:5.7.1-ad-approval` (container id `1b25caa281b6`; frontend bundle `index-BGc29drJ.js`, stylesheet `index-CgMM6JFQ.css`).
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
 
@@ -334,11 +344,12 @@ USER_LOGIN_TO_FORMAL_ADMIN_UI_THEN_RUN_BROWSER_ACCEPTANCE
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- AD live synchronization requires a read-only bind DN and password from the domain administrator. Network, LDAPS port, RootDSE discovery, base DN, domain, sync code, failure audit, and UI/API are complete.
-- Authenticated browser acceptance requires the user to log into the already-open formal login page or explicitly approve credential entry at action time; API-level authenticated acceptance already passes.
+- AD live user enumeration requires a read-only Bind DN and password from the domain administrator. `10.1.1.102`, ports 389/636, RootDSE, `hilaicloud.com`, and `OU=浙江海莱云智科技有限公司,DC=hilaicloud,DC=com` are verified; anonymous user search is rejected by AD as expected. The credential must be stored only in server environment secrets.
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- Do not repeat the 5.7.1 isolated migration downgrade/re-upgrade or `AD_MANUAL_APPROVAL_ACCEPTANCE_PASS` suite unless AD approval code/schema changes.
+- Do not repeat the 5.7.1 formal PostgreSQL/MinIO predeployment backups or deployment unless source/runtime/schema changes; both checksums and the stopped 5.7.0 rollback container are recorded.
 - Do not repeat the 5.7.0 clean migration/import/API/RBAC/PRICE_VIEW acceptance unless application or schema code changes; isolated and formal runs passed.
 - Do not repeat official material import to prove idempotency; two isolated and two formal consecutive imports passed. Future runs are allowed only when official source material changes.
 - Do not delete the stopped `haizhi-hub-api-v563-material-rollback-20260823` until business acceptance of 5.7.0.

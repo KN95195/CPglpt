@@ -24,15 +24,17 @@ PERMS={
 'algorithm_admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW',
 'price_admin':'KNOWLEDGE_VIEW,PRICE_VIEW',
 'admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW,USER_MANAGE'}
+ROLE_NAMES={'sales':'销售人员','presales':'售前人员','sales_support':'销售支持','product_admin':'产品经理','algorithm_admin':'算法管理员','price_admin':'价格管理员','admin':'系统管理员'}
+PERMISSION_NAMES={'KNOWLEDGE_VIEW':'查看知识内容','KNOWLEDGE_MANAGE':'管理知识内容','PRICE_VIEW':'查看价格','USER_MANAGE':'用户与角色管理'}
 def bootstrap(db):
  if db.scalar(select(Role.id).limit(1)): return
  bootstrap_passwords=json.loads(os.environ.get('BOOTSTRAP_PASSWORDS_JSON','{}'))
  missing=sorted(set(PERMS)-set(bootstrap_passwords))
  if missing: raise RuntimeError('BOOTSTRAP_PASSWORDS_JSON must define every initial role')
- roles={k:Role(code=k,name=k.replace('_',' ').title(),permissions=v) for k,v in PERMS.items()};db.add_all(roles.values());db.flush()
+ roles={k:Role(code=k,name=ROLE_NAMES[k],permissions=v) for k,v in PERMS.items()};db.add_all(roles.values());db.flush()
  permission_codes=sorted({code for values in PERMS.values() for code in values.split(',') if code})
  permissions={item.code:item for item in db.scalars(select(Permission).where(Permission.code.in_(permission_codes)))}
- missing_permissions=[Permission(code=code,name=code.replace('_',' ').title()) for code in permission_codes if code not in permissions]
+ missing_permissions=[Permission(code=code,name=PERMISSION_NAMES[code]) for code in permission_codes if code not in permissions]
  db.add_all(missing_permissions);db.flush();permissions.update({item.code:item for item in missing_permissions})
  db.add_all([RolePermission(role_id=role.id,permission_id=permissions[code].id) for key,role in roles.items() for code in PERMS[key].split(',') if code])
  for k in roles: db.add(User(username=k,display_name={'admin':'系统管理员','sales':'销售专员','sales_support':'销售支持'}.get(k,k),password_hash=pwd.hash(bootstrap_passwords[k]),role_id=roles[k].id))

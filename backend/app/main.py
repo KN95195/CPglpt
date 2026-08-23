@@ -1,4 +1,4 @@
-import csv,io,json,time,uuid,os,secrets,urllib.parse
+import csv,io,json,time,uuid,os,re,secrets,urllib.parse
 from contextlib import asynccontextmanager
 from datetime import datetime,timedelta,timezone
 import jwt,httpx
@@ -55,10 +55,15 @@ class RagIn(BaseModel): text:str;document_id:int|None=None;metadata:dict={}
 class RagSearch(BaseModel): query:str;limit:int=5
 class TrainingCourseIn(BaseModel): external_course_id:str;name:str=Field(min_length=2);summary:str='';launch_url:str;status:str='ACTIVE'
 class RolePermissionPatch(BaseModel): permissions:list[str]
+class DirectoryApproval(BaseModel): candidate_id:int;role_code:str
+class DirectoryConfirm(BaseModel): run_id:int;users:list[DirectoryApproval]
 class UserCreate(BaseModel): username:str=Field(min_length=2,max_length=64);display_name:str=Field(min_length=1,max_length=80);password:str=Field(min_length=8,max_length=128);role_code:str;email:str='';department:str='';enabled:bool=True
 class UserPatch(BaseModel): display_name:str|None=None;password:str|None=Field(default=None,min_length=8,max_length=128);role_code:str|None=None;email:str|None=None;department:str|None=None;enabled:bool|None=None
 class RoleCreate(BaseModel): code:str=Field(pattern=r'^[a-z][a-z0-9_]{1,63}$');name:str=Field(min_length=2,max_length=80);permissions:list[str]=[]
 class RolePatch(BaseModel): name:str|None=None;permissions:list[str]|None=None
+def chinese_role_name(value):
+ if not re.fullmatch(r'[\u4e00-\u9fff0-9（）()·\s-]{2,80}',value.strip()):raise HTTPException(422,'角色名称必须使用中文')
+ return value.strip()
 def user(c:HTTPAuthorizationCredentials|None=Depends(security),db:Session=Depends(session)):
  if not c:raise HTTPException(401,'请先登录')
  try:data=jwt.decode(c.credentials,settings.jwt_secret,algorithms=['HS256'])
@@ -595,12 +600,12 @@ def roles(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):ret
 @app.post('/api/admin/roles',status_code=201)
 def create_role(x:RoleCreate,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  if db.scalar(select(Role).where(Role.code==x.code)):raise HTTPException(409,'角色编码已存在')
- role=Role(code=x.code,name=x.name,permissions='');db.add(role);db.flush();apply_role_permissions(db,role,x.permissions);audit(db,u,'CREATE','role',role.id,x.model_dump());db.commit();db.refresh(role);return role_dto(role)
+ role=Role(code=x.code,name=chinese_role_name(x.name),permissions='');db.add(role);db.flush();apply_role_permissions(db,role,x.permissions);audit(db,u,'CREATE','role',role.id,x.model_dump());db.commit();db.refresh(role);return role_dto(role)
 @app.patch('/api/admin/roles/{role_code}')
 def update_role(role_code:str,x:RolePatch,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  role=db.scalar(select(Role).where(Role.code==role_code))
  if not role:raise HTTPException(404,'角色不存在')
- if x.name is not None:role.name=x.name
+ if x.name is not None:role.name=chinese_role_name(x.name)
  if x.permissions is not None:apply_role_permissions(db,role,x.permissions)
  audit(db,u,'UPDATE','role',role.id,x.model_dump(exclude_none=True));db.commit();return role_dto(role)
 @app.delete('/api/admin/roles/{role_code}',status_code=204)
@@ -617,7 +622,19 @@ def update_role_permissions(role_code:str,x:RolePermissionPatch,db:Session=Depen
 @app.get('/api/admin/directory/status')
 def directory_status(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  last=db.scalar(select(DirectorySyncRun).order_by(DirectorySyncRun.created_at.desc()))
- return {'provider':'AD','configured':ad_ready(),'server':settings.ad_server_url,'baseDn':settings.ad_base_dn,'defaultRole':settings.ad_default_role,'disableMissingUsers':settings.ad_disable_missing_users,'lastRun':({'status':last.status,'created':last.created_count,'updated':last.updated_count,'disabled':last.disabled_count,'error':last.error_message,'finishedAt':last.finished_at.isoformat() if last.finished_at else None} if last else None)}
+ pending=db.scalar(select(func.count(DirectorySyncCandidate.id)).where(DirectorySyncCandidate.run_id==last.id,DirectorySyncCandidate.approval_status=='PENDING')) if last else 0
+ return {'provider':'AD','configured':ad_ready(),'server':settings.ad_server_url,'baseDn':settings.ad_base_dn,'defaultRole':settings.ad_default_role,'missingConfiguration':[name for name,value in [('只读同步账号',settings.ad_bind_dn),('同步账号密码',settings.ad_bind_password)] if not value],'lastRun':({'id':last.id,'status':last.status,'created':last.created_count,'updated':last.updated_count,'pending':pending,'error':last.error_message,'finishedAt':last.finished_at.isoformat() if last.finished_at else None} if last else None)}
+def directory_candidate_dto(row,db):
+ existing=db.scalar(select(User).where((User.external_id==row.external_id)|(User.username==row.username)))
+ return {'id':row.id,'runId':row.run_id,'username':row.username,'displayName':row.display_name,'email':row.email,'department':row.department,'distinguishedName':row.distinguished_name,'changeType':row.change_type,'approvalStatus':row.approval_status,'roleCode':existing.role.code if existing else row.role_code,'existingUser':bool(existing)}
+@app.get('/api/admin/directory/candidates')
+def directory_candidates(run_id:int|None=None,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ if run_id is None:
+  run=db.scalar(select(DirectorySyncRun).where(DirectorySyncRun.status=='PENDING_CONFIRMATION').order_by(DirectorySyncRun.created_at.desc()))
+  if not run:return {'runId':None,'items':[]}
+  run_id=run.id
+ rows=db.scalars(select(DirectorySyncCandidate).where(DirectorySyncCandidate.run_id==run_id).order_by(DirectorySyncCandidate.department,DirectorySyncCandidate.display_name,DirectorySyncCandidate.username))
+ return {'runId':run_id,'items':[directory_candidate_dto(row,db) for row in rows]}
 @app.post('/api/admin/directory/sync')
 def sync_directory(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  run=DirectorySyncRun(status='RUNNING',initiated_by=u.id);db.add(run);db.commit();db.refresh(run)
@@ -626,24 +643,37 @@ def sync_directory(db:Session=Depends(session),u:User=Depends(permit('USER_MANAG
   from ldap3 import ALL,Connection,Server,SUBTREE
   connection=Connection(Server(settings.ad_server_url,get_info=ALL),user=settings.ad_bind_dn,password=settings.ad_bind_password,auto_bind=True,raise_exceptions=True)
   attributes=[settings.ad_username_attribute,settings.ad_display_name_attribute,settings.ad_email_attribute,settings.ad_department_attribute,settings.ad_external_id_attribute];connection.search(settings.ad_base_dn,settings.ad_user_filter,search_scope=SUBTREE,attributes=attributes)
-  role=db.scalar(select(Role).where(Role.code==settings.ad_default_role)) or db.scalar(select(Role).where(Role.code=='viewer'))
+  role=db.scalar(select(Role).where(Role.code==settings.ad_default_role)) or db.scalar(select(Role).where(Role.code=='sales'))
   if not role:raise RuntimeError('AD默认角色不存在')
-  seen=set();now_value=datetime.now(timezone.utc)
+  seen=set()
   for entry in connection.entries:
    def value(name):
     item=getattr(entry,name,None);raw=item.value if item is not None else '';return raw.hex() if isinstance(raw,bytes) else str(raw or '')
    username=value(settings.ad_username_attribute).strip()
    if not username:continue
-   seen.add(username.lower());external=value(settings.ad_external_id_attribute) or str(entry.entry_dn);rec=db.scalar(select(User).where((User.external_id==external)|(User.username==username)))
-   if not rec:rec=User(username=username,display_name=value(settings.ad_display_name_attribute) or username,password_hash=pwd.hash(secrets.token_urlsafe(32)),role_id=role.id,auth_source='AD',external_id=external);db.add(rec);run.created_count+=1
-   else:run.updated_count+=1
-   rec.display_name=value(settings.ad_display_name_attribute) or username;rec.email=value(settings.ad_email_attribute);rec.department=value(settings.ad_department_attribute);rec.auth_source='AD';rec.external_id=external;rec.last_directory_sync_at=now_value;rec.enabled=True
-  if settings.ad_disable_missing_users:
-   for rec in db.scalars(select(User).where(User.auth_source=='AD',User.enabled==True)):
-    if rec.username.lower() not in seen:rec.enabled=False;run.disabled_count+=1
-  connection.unbind();run.status='SUCCESS';run.finished_at=now_value;audit(db,u,'SYNC','active_directory',run.id,{'created':run.created_count,'updated':run.updated_count,'disabled':run.disabled_count});db.commit();return {'status':run.status,'created':run.created_count,'updated':run.updated_count,'disabled':run.disabled_count}
+   distinguished_name=str(entry.entry_dn);department=value(settings.ad_department_attribute) or next((part[3:] for part in distinguished_name.split(',') if part.upper().startswith('OU=') and part[3:]!='浙江海莱云智科技有限公司'),'')
+   seen.add(username.lower());external=value(settings.ad_external_id_attribute) or distinguished_name;rec=db.scalar(select(User).where((User.external_id==external)|(User.username==username)))
+   candidate=DirectorySyncCandidate(run_id=run.id,external_id=external,username=username,display_name=value(settings.ad_display_name_attribute) or username,email=value(settings.ad_email_attribute),department=department,distinguished_name=distinguished_name,change_type='UPDATE' if rec else 'CREATE',role_code=rec.role.code if rec else role.code);db.add(candidate)
+  connection.unbind();run.status='PENDING_CONFIRMATION';audit(db,u,'PREVIEW','active_directory',run.id,{'candidates':len(seen)});db.commit();return directory_candidates(run.id,db,u)
  except Exception as exc:
   db.rollback();run=db.get(DirectorySyncRun,run.id);run.status='FAILED';run.error_message=str(exc)[:1000];run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(502,'AD同步失败：'+str(exc)[:200])
+@app.post('/api/admin/directory/confirm')
+def confirm_directory(x:DirectoryConfirm,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ run=db.get(DirectorySyncRun,x.run_id)
+ if not run or run.status!='PENDING_CONFIRMATION':raise HTTPException(409,'该同步批次不存在或已经处理')
+ if not x.users:raise HTTPException(422,'请至少选择一个允许登录的域用户')
+ selected={item.candidate_id:item.role_code for item in x.users};candidates=list(db.scalars(select(DirectorySyncCandidate).where(DirectorySyncCandidate.run_id==run.id)))
+ if set(selected)-{item.id for item in candidates}:raise HTTPException(422,'包含不属于本批次的候选用户')
+ roles={role.code:role for role in db.scalars(select(Role).where(Role.code.in_(set(selected.values()))))} if selected else {}
+ if set(selected.values())-set(roles):raise HTTPException(422,'包含不存在的角色')
+ now_value=datetime.now(timezone.utc)
+ for item in candidates:
+  if item.id not in selected:item.approval_status='SKIPPED';continue
+  rec=db.scalar(select(User).where((User.external_id==item.external_id)|(User.username==item.username)))
+  if not rec:rec=User(username=item.username,display_name=item.display_name,password_hash=pwd.hash(secrets.token_urlsafe(32)),role_id=roles[selected[item.id]].id,auth_source='AD',external_id=item.external_id);db.add(rec);run.created_count+=1
+  else:run.updated_count+=1
+  rec.display_name=item.display_name;rec.email=item.email;rec.department=item.department;rec.role_id=roles[selected[item.id]].id;rec.auth_source='AD';rec.external_id=item.external_id;rec.last_directory_sync_at=now_value;rec.enabled=True;item.approval_status='APPROVED';item.role_code=selected[item.id]
+ run.status='SUCCESS';run.finished_at=now_value;audit(db,u,'CONFIRM','active_directory',run.id,{'selected':len(selected),'created':run.created_count,'updated':run.updated_count});db.commit();return {'status':'SUCCESS','created':run.created_count,'updated':run.updated_count,'selected':len(selected)}
 @app.get('/api/training/courses')
 def training_courses(db:Session=Depends(session),u:User=Depends(permit('TRAINING_VIEW'))):
  return [{'id':x.id,'externalCourseId':x.external_course_id,'name':x.name,'summary':x.summary,'launchUrl':x.launch_url,'status':x.status,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(TrainingCourse).order_by(TrainingCourse.updated_at.desc()))]
