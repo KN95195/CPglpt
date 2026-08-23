@@ -10,7 +10,7 @@ from sqlalchemy import select,func
 from sqlalchemy.orm import Session
 from .database import Base,engine,session
 from .models import *
-from .seed import bootstrap,ensure_v3_seed
+from .seed import bootstrap,ensure_v3_seed,pwd
 from .config import settings
 from .storage import storage
 from .knowledge import router as knowledge_router
@@ -55,6 +55,10 @@ class RagIn(BaseModel): text:str;document_id:int|None=None;metadata:dict={}
 class RagSearch(BaseModel): query:str;limit:int=5
 class TrainingCourseIn(BaseModel): external_course_id:str;name:str=Field(min_length=2);summary:str='';launch_url:str;status:str='ACTIVE'
 class RolePermissionPatch(BaseModel): permissions:list[str]
+class UserCreate(BaseModel): username:str=Field(min_length=2,max_length=64);display_name:str=Field(min_length=1,max_length=80);password:str=Field(min_length=8,max_length=128);role_code:str;email:str='';department:str='';enabled:bool=True
+class UserPatch(BaseModel): display_name:str|None=None;password:str|None=Field(default=None,min_length=8,max_length=128);role_code:str|None=None;email:str|None=None;department:str|None=None;enabled:bool|None=None
+class RoleCreate(BaseModel): code:str=Field(pattern=r'^[a-z][a-z0-9_]{1,63}$');name:str=Field(min_length=2,max_length=80);permissions:list[str]=[]
+class RolePatch(BaseModel): name:str|None=None;permissions:list[str]|None=None
 def user(c:HTTPAuthorizationCredentials|None=Depends(security),db:Session=Depends(session)):
  if not c:raise HTTPException(401,'请先登录')
  try:data=jwt.decode(c.credentials,settings.jwt_secret,algorithms=['HS256'])
@@ -70,6 +74,14 @@ def permit(code):
   if code not in permission_codes(u):raise HTTPException(403,'缺少权限：'+code)
   return u
  return dep
+def ad_ready():return bool(settings.ad_server_url and settings.ad_base_dn and settings.ad_bind_dn and settings.ad_bind_password)
+def ad_authenticate(username,password):
+ if not settings.ad_server_url or not password:return False
+ try:
+  from ldap3 import Connection,Server
+  principal=f'{username}@{settings.ad_login_domain}' if settings.ad_login_domain and '@' not in username else username
+  connection=Connection(Server(settings.ad_server_url),user=principal,password=password,auto_bind=True,raise_exceptions=True);connection.unbind();return True
+ except Exception:return False
 def gateway_client(c:HTTPAuthorizationCredentials|None=Depends(security),db:Session=Depends(session)):
  if not c: raise HTTPException(401,'missing gateway credential')
  if settings.ai_gateway_api_key and secrets.compare_digest(c.credentials,settings.ai_gateway_api_key):
@@ -243,12 +255,12 @@ def delete_tender(tid:int,db:Session=Depends(session),u:User=Depends(permit('TEN
  db.query(DocumentAsset).filter(DocumentAsset.tender_id==tid).update({'tender_id':None});audit(db,u,'DELETE','tender',tid,{'name':rec.name});db.delete(rec);db.commit()
 @app.post('/api/auth/login')
 def login(x:Login,request:Request,db:Session=Depends(session)):
- from .seed import pwd
  key=request.client.host if request.client else 'unknown';now=time.monotonic()
  attempts=[stamp for stamp in login_failures.get(key,[]) if now-stamp<300]
  if len(attempts)>=5:raise HTTPException(429,'登录失败次数过多，请稍后重试')
  u=db.scalar(select(User).where(User.username==x.username))
- if not u or not pwd.verify(x.password,u.password_hash):
+ valid=bool(u and ((u.auth_source=='AD' and ad_authenticate(x.username,x.password)) or (u.auth_source!='AD' and pwd.verify(x.password,u.password_hash))))
+ if not valid:
   login_failures[key]=attempts+[now];raise HTTPException(401,'账号或密码错误')
  login_failures.pop(key,None)
  token=jwt.encode({'uid':u.id,'exp':datetime.now(timezone.utc)+timedelta(hours=8)},settings.jwt_secret,algorithm='HS256')
@@ -535,20 +547,103 @@ def delete_project(pid:int,db:Session=Depends(session),u:User=Depends(permit('BO
  rec=db.get(Project,pid)
  if not rec:raise HTTPException(404,'项目不存在')
  audit(db,u,'DELETE','project',pid,{'name':rec.name});db.delete(rec);db.commit()
+def role_dto(x):return {'id':x.id,'code':x.code,'name':x.name,'permissions':sorted({p.permission.code for p in x.permission_links} or {p for p in x.permissions.split(',') if p}),'userCount':len(getattr(x,'users',[]) or [])}
+def apply_role_permissions(db,role,requested):
+ requested=set(requested);available={p.code:p for p in db.scalars(select(Permission).where(Permission.code.in_(requested)))} if requested else {};missing=requested-set(available)
+ if missing:raise HTTPException(422,'权限不存在：'+','.join(sorted(missing)))
+ role.permission_links.clear();db.flush()
+ for code in sorted(requested):role.permission_links.append(RolePermission(permission=available[code]))
+ role.permissions=','.join(sorted(requested))
+@app.get('/api/admin/permissions')
+def list_permissions(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ return [{'id':x.id,'code':x.code,'name':x.name,'description':x.description} for x in db.scalars(select(Permission).order_by(Permission.code))]
+@app.get('/api/admin/users')
+def list_users(q:str='',source:str='',db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ st=select(User).order_by(User.username)
+ if q:st=st.where(User.username.ilike('%'+q+'%')|User.display_name.ilike('%'+q+'%')|User.email.ilike('%'+q+'%'))
+ if source:st=st.where(User.auth_source==source)
+ return [{'id':x.id,'username':x.username,'displayName':x.display_name,'email':x.email,'department':x.department,'authSource':x.auth_source,'externalId':x.external_id,'enabled':x.enabled,'roleCode':x.role.code,'roleName':x.role.name,'lastDirectorySyncAt':x.last_directory_sync_at.isoformat() if x.last_directory_sync_at else None,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(st)]
+@app.post('/api/admin/users',status_code=201)
+def create_user(x:UserCreate,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ if db.scalar(select(User).where(User.username==x.username)):raise HTTPException(409,'用户名已存在')
+ role=db.scalar(select(Role).where(Role.code==x.role_code))
+ if not role:raise HTTPException(422,'角色不存在')
+ rec=User(username=x.username,display_name=x.display_name,password_hash=pwd.hash(x.password),role_id=role.id,email=x.email,department=x.department,enabled=x.enabled,auth_source='LOCAL');db.add(rec);db.flush();audit(db,u,'CREATE','user',rec.id,{'username':rec.username,'role':role.code});db.commit();db.refresh(rec);return {'id':rec.id,'username':rec.username}
+@app.patch('/api/admin/users/{user_id}')
+def update_user_admin(user_id:int,x:UserPatch,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ rec=db.get(User,user_id)
+ if not rec:raise HTTPException(404,'用户不存在')
+ values=x.model_dump(exclude_none=True)
+ if 'role_code' in values:
+  role=db.scalar(select(Role).where(Role.code==values.pop('role_code')))
+  if not role:raise HTTPException(422,'角色不存在')
+  rec.role_id=role.id
+ if 'password' in values:
+  if rec.auth_source=='AD':raise HTTPException(422,'AD用户密码由域控管理')
+  rec.password_hash=pwd.hash(values.pop('password'))
+ for key,value in values.items():setattr(rec,key,value)
+ if rec.id==u.id and not rec.enabled:raise HTTPException(422,'不能禁用当前登录用户')
+ audit(db,u,'UPDATE','user',rec.id,{'fields':sorted(x.model_dump(exclude_none=True))});db.commit();return {'id':rec.id,'username':rec.username,'enabled':rec.enabled}
+@app.delete('/api/admin/users/{user_id}',status_code=204)
+def delete_user_admin(user_id:int,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ rec=db.get(User,user_id)
+ if not rec:raise HTTPException(404,'用户不存在')
+ if rec.id==u.id:raise HTTPException(422,'不能删除当前登录用户')
+ audit(db,u,'DELETE','user',rec.id,{'username':rec.username});db.delete(rec);db.commit()
 @app.get('/api/admin/roles')
-def roles(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
- return [{'code':x.code,'name':x.name,'permissions':sorted({p.permission.code for p in x.permission_links} or {p for p in x.permissions.split(',') if p})} for x in db.scalars(select(Role).order_by(Role.code))]
+def roles(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):return [role_dto(x) for x in db.scalars(select(Role).order_by(Role.code))]
+@app.post('/api/admin/roles',status_code=201)
+def create_role(x:RoleCreate,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ if db.scalar(select(Role).where(Role.code==x.code)):raise HTTPException(409,'角色编码已存在')
+ role=Role(code=x.code,name=x.name,permissions='');db.add(role);db.flush();apply_role_permissions(db,role,x.permissions);audit(db,u,'CREATE','role',role.id,x.model_dump());db.commit();db.refresh(role);return role_dto(role)
+@app.patch('/api/admin/roles/{role_code}')
+def update_role(role_code:str,x:RolePatch,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ role=db.scalar(select(Role).where(Role.code==role_code))
+ if not role:raise HTTPException(404,'角色不存在')
+ if x.name is not None:role.name=x.name
+ if x.permissions is not None:apply_role_permissions(db,role,x.permissions)
+ audit(db,u,'UPDATE','role',role.id,x.model_dump(exclude_none=True));db.commit();return role_dto(role)
+@app.delete('/api/admin/roles/{role_code}',status_code=204)
+def delete_role(role_code:str,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ role=db.scalar(select(Role).where(Role.code==role_code))
+ if not role:raise HTTPException(404,'角色不存在')
+ if role.code=='admin' or db.scalar(select(func.count(User.id)).where(User.role_id==role.id)):raise HTTPException(422,'系统角色或已分配用户的角色不能删除')
+ audit(db,u,'DELETE','role',role.id,{'code':role.code});db.delete(role);db.commit()
 @app.patch('/api/admin/roles/{role_code}/permissions')
 def update_role_permissions(role_code:str,x:RolePermissionPatch,db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
  role=db.scalar(select(Role).where(Role.code==role_code))
  if not role:raise HTTPException(404,'角色不存在')
- requested=set(x.permissions);available={p.code:p for p in db.scalars(select(Permission).where(Permission.code.in_(requested)))}
- missing=requested-set(available)
- if missing:raise HTTPException(422,'权限不存在：'+','.join(sorted(missing)))
- role.permission_links.clear();db.flush()
- for code in sorted(requested):role.permission_links.append(RolePermission(permission=available[code]))
- role.permissions=','.join(sorted(requested));audit(db,u,'UPDATE','role_permissions',role.id,{'permissions':sorted(requested)});db.commit()
- return {'code':role.code,'name':role.name,'permissions':sorted(requested)}
+ apply_role_permissions(db,role,x.permissions);audit(db,u,'UPDATE','role_permissions',role.id,{'permissions':sorted(x.permissions)});db.commit();return role_dto(role)
+@app.get('/api/admin/directory/status')
+def directory_status(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ last=db.scalar(select(DirectorySyncRun).order_by(DirectorySyncRun.created_at.desc()))
+ return {'provider':'AD','configured':ad_ready(),'server':settings.ad_server_url,'baseDn':settings.ad_base_dn,'defaultRole':settings.ad_default_role,'disableMissingUsers':settings.ad_disable_missing_users,'lastRun':({'status':last.status,'created':last.created_count,'updated':last.updated_count,'disabled':last.disabled_count,'error':last.error_message,'finishedAt':last.finished_at.isoformat() if last.finished_at else None} if last else None)}
+@app.post('/api/admin/directory/sync')
+def sync_directory(db:Session=Depends(session),u:User=Depends(permit('USER_MANAGE'))):
+ run=DirectorySyncRun(status='RUNNING',initiated_by=u.id);db.add(run);db.commit();db.refresh(run)
+ if not ad_ready():run.status='FAILED';run.error_message='AD连接参数未配置完整';run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(503,'AD连接参数未配置完整')
+ try:
+  from ldap3 import ALL,Connection,Server,SUBTREE
+  connection=Connection(Server(settings.ad_server_url,get_info=ALL),user=settings.ad_bind_dn,password=settings.ad_bind_password,auto_bind=True,raise_exceptions=True)
+  attributes=[settings.ad_username_attribute,settings.ad_display_name_attribute,settings.ad_email_attribute,settings.ad_department_attribute,settings.ad_external_id_attribute];connection.search(settings.ad_base_dn,settings.ad_user_filter,search_scope=SUBTREE,attributes=attributes)
+  role=db.scalar(select(Role).where(Role.code==settings.ad_default_role)) or db.scalar(select(Role).where(Role.code=='viewer'))
+  if not role:raise RuntimeError('AD默认角色不存在')
+  seen=set();now_value=datetime.now(timezone.utc)
+  for entry in connection.entries:
+   def value(name):
+    item=getattr(entry,name,None);raw=item.value if item is not None else '';return raw.hex() if isinstance(raw,bytes) else str(raw or '')
+   username=value(settings.ad_username_attribute).strip()
+   if not username:continue
+   seen.add(username.lower());external=value(settings.ad_external_id_attribute) or str(entry.entry_dn);rec=db.scalar(select(User).where((User.external_id==external)|(User.username==username)))
+   if not rec:rec=User(username=username,display_name=value(settings.ad_display_name_attribute) or username,password_hash=pwd.hash(secrets.token_urlsafe(32)),role_id=role.id,auth_source='AD',external_id=external);db.add(rec);run.created_count+=1
+   else:run.updated_count+=1
+   rec.display_name=value(settings.ad_display_name_attribute) or username;rec.email=value(settings.ad_email_attribute);rec.department=value(settings.ad_department_attribute);rec.auth_source='AD';rec.external_id=external;rec.last_directory_sync_at=now_value;rec.enabled=True
+  if settings.ad_disable_missing_users:
+   for rec in db.scalars(select(User).where(User.auth_source=='AD',User.enabled==True)):
+    if rec.username.lower() not in seen:rec.enabled=False;run.disabled_count+=1
+  connection.unbind();run.status='SUCCESS';run.finished_at=now_value;audit(db,u,'SYNC','active_directory',run.id,{'created':run.created_count,'updated':run.updated_count,'disabled':run.disabled_count});db.commit();return {'status':run.status,'created':run.created_count,'updated':run.updated_count,'disabled':run.disabled_count}
+ except Exception as exc:
+  db.rollback();run=db.get(DirectorySyncRun,run.id);run.status='FAILED';run.error_message=str(exc)[:1000];run.finished_at=datetime.now(timezone.utc);db.commit();raise HTTPException(502,'AD同步失败：'+str(exc)[:200])
 @app.get('/api/training/courses')
 def training_courses(db:Session=Depends(session),u:User=Depends(permit('TRAINING_VIEW'))):
  return [{'id':x.id,'externalCourseId':x.external_course_id,'name':x.name,'summary':x.summary,'launchUrl':x.launch_url,'status':x.status,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(TrainingCourse).order_by(TrainingCourse.updated_at.desc()))]

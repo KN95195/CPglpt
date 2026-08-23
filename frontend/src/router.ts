@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
     { path: center.path, name: center.key, component: { template: '<span />' } },
     { path: `${center.path}/:id`, name: `${center.key}-detail`, component: { template: '<span />' }, props: true },
   ]),
+  { path: '/system-admin', name: 'system-admin', component: { template: '<span />' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

@@ -117,6 +117,22 @@ class FeaturePayload(Payload):
     icon: str = ''
     sortOrder: int = Field(default=0, alias='sort_order', ge=0)
 
+class ProductVariantPayload(Payload):
+    modelCode: str = Field(alias='model_code', min_length=1, max_length=100)
+    materialCode: str = Field(default='', alias='material_code')
+    unit: str = '台'
+    isPrimary: bool = Field(default=False, alias='is_primary')
+    isAgentProduct: bool = Field(default=False, alias='is_agent_product')
+    agentPrice: float | None = Field(default=None, alias='agent_price', ge=0)
+    salePrice: float | None = Field(default=None, alias='sale_price', ge=0)
+    warrantyMonths: int = Field(default=12, alias='warranty_months', ge=0)
+    extendedWarrantyRule: str = Field(default='', alias='extended_warranty_rule')
+    applicableScenes: list[str] = Field(default=[], alias='applicable_scenes')
+    salesNotes: str = Field(default='', alias='sales_notes')
+    commercialStatus: str = Field(default='ACTIVE', alias='commercial_status')
+    specifications: dict[str, str] = {}
+    sortOrder: int = Field(default=0, alias='sort_order', ge=0)
+
 
 class ProductCreate(Payload):
     name: str = Field(min_length=2, max_length=160)
@@ -154,6 +170,7 @@ class ProductUpdate(Payload):
     boundaries: list[str] | None = None
     parameters: list[ProductParameterPayload] | None = None
     tenderParameters: list[ProductParameterPayload] | None = Field(default=None, alias='tender_parameters')
+    variants: list[ProductVariantPayload] | None = None
 
     @field_validator('productType')
     @classmethod
@@ -456,6 +473,22 @@ class PricePayload(Payload):
     validUntil: datetime | None = Field(default=None, alias='valid_until')
     notes: str = ''
 
+class CommercialProfilePayload(Payload):
+    materialCode: str = Field(default='', alias='material_code')
+    unit: str = '套'
+    isAgentProduct: bool = Field(default=False, alias='is_agent_product')
+    agentPrice: float | None = Field(default=None, alias='agent_price', ge=0)
+    salePrice: float | None = Field(default=None, alias='sale_price', ge=0)
+    warrantyMonths: int = Field(default=12, alias='warranty_months', ge=0)
+    extendedWarrantyRule: str = Field(default='', alias='extended_warranty_rule')
+    applicableScenes: list[str] = Field(default=[], alias='applicable_scenes')
+    salesNotes: str = Field(default='', alias='sales_notes')
+    commercialStatus: str = Field(default='ACTIVE', alias='commercial_status')
+    licenseUnit: str = Field(default='', alias='license_unit')
+    includedQuantity: int | None = Field(default=None, alias='included_quantity', ge=0)
+    overageUnitPrice: float | None = Field(default=None, alias='overage_unit_price', ge=0)
+    deliveryMethod: str = Field(default='', alias='delivery_method')
+
 
 class BomItemPayload(Payload):
     productId: int = Field(alias='product_id')
@@ -483,6 +516,12 @@ def price_dto(item: ProductPrice | None):
         return None
     return {'referencePrice': float(item.reference_price), 'currency': item.currency, 'taxIncluded': item.tax_included, 'taxRate': float(item.tax_rate), 'validFrom': item.valid_from.isoformat() if item.valid_from else None, 'validUntil': item.valid_until.isoformat() if item.valid_until else None, 'notes': item.notes}
 
+def commercial_dto(item: KnowledgeCommercialProfile | None, user: User):
+    if not item:return None
+    result={'materialCode':item.material_code,'unit':item.unit,'isAgentProduct':item.is_agent_product,'warrantyMonths':item.warranty_months,'extendedWarrantyRule':item.extended_warranty_rule,'applicableScenes':json_value(item.applicable_scenes_json,[]),'salesNotes':item.sales_notes,'commercialStatus':item.commercial_status,'licenseUnit':item.license_unit,'includedQuantity':item.included_quantity,'deliveryMethod':item.delivery_method}
+    if 'PRICE_VIEW' in permissions(user):result|={'agentPrice':float(item.agent_price) if item.agent_price is not None else None,'salePrice':float(item.sale_price) if item.sale_price is not None else None,'overageUnitPrice':float(item.overage_unit_price) if item.overage_unit_price is not None else None}
+    return result
+
 
 def product_dto(product: Product, db: Session, user: User, detail=False):
     result = {
@@ -506,6 +545,7 @@ def product_dto(product: Product, db: Session, user: User, detail=False):
             'owner': product.owner, 'source': product.source,
             'tenderParameters': json_value(product.tender_parameters_json, []),
             'relations': relation_rows('products', product.id, db),
+            'variants': [{'id': x.id, 'modelCode': x.model_code, 'materialCode': x.material_code, 'unit': x.unit, 'isPrimary': x.is_primary, 'isAgentProduct': x.is_agent_product, 'warrantyMonths': x.warranty_months, 'extendedWarrantyRule': x.extended_warranty_rule, 'applicableScenes': json_value(x.applicable_scenes_json, []), 'salesNotes': x.sales_notes, 'commercialStatus': x.commercial_status, 'specifications': json_value(x.specifications_json, {}), 'sortOrder': x.sort_order, **({'agentPrice': float(x.agent_price) if x.agent_price is not None else None, 'salePrice': float(x.sale_price) if x.sale_price is not None else None} if 'PRICE_VIEW' in permissions(user) else {})} for x in sorted(product.variants, key=lambda item: item.sort_order)],
         }
     return result
 
@@ -592,6 +632,8 @@ def replace_product_children(record: Product, data: dict):
         record.features = [ProductFeature(title=x.title, description=x.description, icon=x.icon, sort_order=x.sortOrder) for x in data.pop('features')]
     if 'tenderParameters' in data:
         record.tender_parameters_json = json_text([x.model_dump(by_alias=False) for x in data.pop('tenderParameters')])
+    if 'variants' in data:
+        record.variants = [ProductVariant(model_code=x.modelCode.strip(), material_code=x.materialCode, unit=x.unit, is_primary=x.isPrimary, is_agent_product=x.isAgentProduct, agent_price=x.agentPrice, sale_price=x.salePrice, warranty_months=x.warrantyMonths, extended_warranty_rule=x.extendedWarrantyRule, applicable_scenes_json=json_text(x.applicableScenes), sales_notes=x.salesNotes, commercial_status=x.commercialStatus, specifications_json=json_text(x.specifications), sort_order=x.sortOrder) for x in data.pop('variants')]
 
 
 @router.get('/products')
@@ -692,6 +734,22 @@ def update_product_price(record_id: int, payload: PricePayload, db: Session = De
     audit(db, user, 'UPDATE', 'product_price', record_id, {'priceFields': sorted(values)}); db.commit(); db.refresh(record)
     return price_dto(record)
 
+@router.get('/{kind}/{record_id}/commercial')
+def get_commercial_profile(kind:str,record_id:int,db:Session=Depends(session),user:User=Depends(require_permission('KNOWLEDGE_VIEW'))):
+    if kind not in {'software','algorithms'} or not db.get(CENTER_MODELS[kind],record_id):raise HTTPException(404,'知识条目不存在')
+    return commercial_dto(db.scalar(select(KnowledgeCommercialProfile).where(KnowledgeCommercialProfile.center_type==kind,KnowledgeCommercialProfile.center_id==record_id)),user)
+
+@router.patch('/{kind}/{record_id}/commercial')
+def update_commercial_profile(kind:str,record_id:int,payload:CommercialProfilePayload,db:Session=Depends(session),user:User=Depends(require_permission('KNOWLEDGE_MANAGE'))):
+    if 'PRICE_VIEW' not in permissions(user):raise HTTPException(403,'缺少权限：PRICE_VIEW')
+    if kind not in {'software','algorithms'} or not db.get(CENTER_MODELS[kind],record_id):raise HTTPException(404,'知识条目不存在')
+    record=db.scalar(select(KnowledgeCommercialProfile).where(KnowledgeCommercialProfile.center_type==kind,KnowledgeCommercialProfile.center_id==record_id))
+    if not record:record=KnowledgeCommercialProfile(center_type=kind,center_id=record_id);db.add(record)
+    values=payload.model_dump(by_alias=False)
+    mapping={'materialCode':'material_code','isAgentProduct':'is_agent_product','agentPrice':'agent_price','salePrice':'sale_price','warrantyMonths':'warranty_months','extendedWarrantyRule':'extended_warranty_rule','applicableScenes':'applicable_scenes_json','salesNotes':'sales_notes','commercialStatus':'commercial_status','licenseUnit':'license_unit','includedQuantity':'included_quantity','overageUnitPrice':'overage_unit_price','deliveryMethod':'delivery_method'}
+    for key,value in values.items():setattr(record,mapping.get(key,key),json_text(value) if key=='applicableScenes' else value)
+    db.flush();audit(db,user,'UPDATE','commercial_profile',record.id,{'centerType':kind,'centerId':record_id});db.commit();return commercial_dto(record,user)
+
 
 def replace_software(record: Software, payload: SoftwarePayload):
     record.name=payload.name; record.code=payload.code; record.version=payload.version; record.software_type=payload.softwareType; record.vendor=payload.vendor; record.deployment_mode=payload.deploymentMode; record.supported_os_json=json_text(payload.supportedOs); record.database_json=json_text(payload.databases); record.protocols_json=json_text(payload.protocols); record.description=payload.summary; record.detail_description=payload.description; record.logo=payload.logo; record.status=payload.status; record.boundaries_json=json_text(payload.boundaries)
@@ -752,7 +810,9 @@ def list_center(kind, q, status, db, user):
 def get_center(kind, record_id, db, user):
     model, _, _, _, serializer = CENTER_CONFIG[kind]; record = db.get(model, record_id)
     if not record: raise HTTPException(404, '知识条目不存在')
-    return serializer(record, db, user, True) if kind == 'solutions' else serializer(record, db, True)
+    result=serializer(record, db, user, True) if kind == 'solutions' else serializer(record, db, True)
+    if kind in {'software','algorithms'}:result['commercial']=commercial_dto(db.scalar(select(KnowledgeCommercialProfile).where(KnowledgeCommercialProfile.center_type==kind,KnowledgeCommercialProfile.center_id==record_id)),user)
+    return result
 
 
 def create_center(kind, payload, db, user):

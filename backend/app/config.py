@@ -14,5 +14,18 @@ class Settings(BaseSettings):
     storage_secret_key: str = ''
     storage_bucket: str = 'haizhi-documents'
     storage_secure: bool = False
+    ad_server_url: str = ''
+    ad_base_dn: str = ''
+    ad_bind_dn: str = ''
+    ad_bind_password: str = ''
+    ad_user_filter: str = '(&(objectClass=user)(sAMAccountName=*))'
+    ad_username_attribute: str = 'sAMAccountName'
+    ad_display_name_attribute: str = 'displayName'
+    ad_email_attribute: str = 'mail'
+    ad_department_attribute: str = 'department'
+    ad_external_id_attribute: str = 'objectGUID'
+    ad_default_role: str = 'viewer'
+    ad_login_domain: str = ''
+    ad_disable_missing_users: bool = False
 
 settings = Settings()

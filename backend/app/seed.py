@@ -23,7 +23,7 @@ PERMS={
 'product_admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW',
 'algorithm_admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW',
 'price_admin':'KNOWLEDGE_VIEW,PRICE_VIEW',
-'admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW'}
+'admin':'KNOWLEDGE_VIEW,KNOWLEDGE_MANAGE,PRICE_VIEW,USER_MANAGE'}
 def bootstrap(db):
  if db.scalar(select(Role.id).limit(1)): return
  bootstrap_passwords=json.loads(os.environ.get('BOOTSTRAP_PASSWORDS_JSON','{}'))
