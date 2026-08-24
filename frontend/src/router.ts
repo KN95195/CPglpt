@@ -15,6 +15,12 @@ const routes: RouteRecordRaw[] = [
     { path: center.path, name: center.key, component: { template: '<span />' } },
     { path: `${center.path}/:id`, name: `${center.key}-detail`, component: { template: '<span />' }, props: true },
   ]),
+  { path: '/ai-config', name: 'ai-config', component: { template: '<span />' } },
+  { path: '/projects', name: 'projects', component: { template: '<span />' } },
+  { path: '/projects/:id', name: 'project-detail', component: { template: '<span />' } },
+  { path: '/bom-rules', name: 'bom-rules', component: { template: '<span />' } },
+  { path: '/excel-templates', name: 'excel-templates', component: { template: '<span />' } },
+  { path: '/documents', name: 'documents', component: { template: '<span />' } },
   { path: '/system-admin', name: 'system-admin', component: { template: '<span />' } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

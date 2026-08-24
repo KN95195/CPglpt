@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     ai_model: str = '/model/models/Qwen3.6-27B'
     ai_timeout_seconds: int = 30
     ai_gateway_api_key: str = ''
+    dify_api_base_url: str = ''
+    dify_dataset_api_key: str = ''
+    dify_knowledge_dataset_id: str = ''
+    dify_knowledge_indexing_technique: str = 'economy'
+    dify_knowledge_timeout_seconds: int = 90
     storage_endpoint: str = ''
     storage_access_key: str = ''
     storage_secret_key: str = ''

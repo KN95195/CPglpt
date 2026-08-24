@@ -2,21 +2,56 @@
 Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
 
 # CURRENT PHASE
-AD_MANUAL_CONFIGURATION_LIVE_CREDENTIAL_CORRECTION
+PHASE2_BUSINESS_IMPLEMENTATION
 
 # CURRENT BUSINESS LOOP
-System administrators now manually configure and enable LDAP/LDAPS in the System Administration page, test connectivity, save encrypted credentials, manually read directory users into a pending batch, then approve only checked users with a selected Chinese role. No LDAP host, Base DN, bind account, or password is defaulted from backend environment variables. Version 5.7.2 is deployed; the first live directory read awaits credentials entered by an authorized administrator in the UI.
+The formal PHASE 2 BUSINESS IMPLEMENTATION directive authorizes implementation from the approved R2 baseline. Work proceeds in an isolated implementation branch and candidate environment; production port 443, production data, Dify 1.16.1, Moodle, and legacy port 80 remain unchanged until backup, candidate migration, complete acceptance, and controlled cutover pass.
 
 # LAST SUCCESSFUL STEP
-AD-CONFIG-010: Diagnosed the production LDAP failure, sanitized control bytes in external errors, restored JSON 502 responses, added frontend non-JSON fallback and login-domain guidance/validation, deployed hardened `5.7.3-ad-error-fix`, repaired one stuck RUNNING sync record, and passed isolated plus formal regression tests.
+PHASE2-IMPL-011J: Deployed immutable `haizhi-hub-api:6.0.5-phase2-style-fix`, closed the production scoped-CSS mismatch, passed 44/44 responsive route checks and 12/12 six-center list/detail browser checks with zero console warnings/errors, removed the exact meaningless project `嗯嗯嗯`, and completed the backed-up/reversible Dify port-80 cutover.
 
 # CURRENT STEP
-AD-CONFIG-011: Correct Login Domain to `hilaicloud.com`, verify the real `ldapreader@hilaicloud.com` password/account state, then rerun Connectivity Test before Manual Domain User Sync.
+PHASE2-IMPL-012_FINAL_REPORT_PACKAGE_COMMIT_AND_CHECKPOINT
 
 # NEXT EXACT STEP
-CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
+GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 
 # COMPLETED STEPS
+- PHASE2-IMPL-011J: Built candidate `6.0.5`, passed candidate health/security/style checks, retained stopped rollback container `haizhi-hub-api-v604-stylerollback-20260824`, and deployed the same immutable image with UID/GID `10001:10001`, read-only root, capability drop `ALL`, `no-new-privileges`, and noexec/nosuid `/tmp`. Formal direct and 443 health, CSS scope, and Alembic `c3d4e5f60718` passed.
+- PHASE2-IMPL-011I: Backed up the legacy port-80 service code, SQLite database, environment file, and systemd unit with verified SHA-256 at `/data/haizhi-product-hub/backups/20260824-phase2-port80-cutover`; disabled the legacy unit without deleting files; published Dify through hardened `haizhi-dify-port80`; verified browser title/login UI and `setup=finished` on ports 80 and 18081 while port 443 remained healthy.
+- PHASE2-IMPL-011H: Production project `桥梁防撞业务验收项目-20260824` (id 6) passed structured parsing for `上下游各3公里`, real BOM recommendation, quantity/manual-note adjustment, 3/0/0 validation, immutable V2/V3 history, visual Excel mapping, effect preview, authenticated XLSX download, and workbook content/style inspection. Published document id 14 is `PUBLISHED`, `CURRENT`, `knowledgeEnabled=true`, and `knowledgeStatus=SYNCED`; draft synchronization denial and authenticated preview/original download passed.
+- PHASE2-IMPL-011G: Real in-app-browser viewport scan passed all tested non-home Phase 2 routes. Homepage passed 1920x1080 but failed 1600x900, 1440x900, and 1366x768 because production JS uses `data-v-fb4feb6a` while its loaded stylesheet contains the stale `data-v-780e4be3` Phase2Workspace selectors. A clean local `npm run build` emits matching JS/CSS scope ids and stylesheet `index-D418WcGz.css`; root cause is a mismatched production asset package, not intended layout geometry.
+- PHASE2-IMPL-011F: Created and visually verified placeholder and ordinary Excel templates, uploaded both to production, completed ordinary-template visual cell/BOM mapping, and fixed authenticated final XLSX download. Passed `PHASE2_TEMPLATE_UPLOAD_PASS`, `PHASE2_DOWNLOAD_FIX_CANDIDATE_PASS`, `PHASE2_DOWNLOAD_FIX_FORMAL_PASS`, and `PHASE2_DOWNLOAD_FIX_GATEWAY_PASS`. Formal image is `haizhi-hub-api:6.0.4-phase2-download-fix`; stopped rollback container is `haizhi-hub-api-v603-downloadrollback-20260824`.
+- PHASE2-IMPL-011E: Replaced browser-incompatible cloning of the reactive BOM API payload, built the production frontend, published entry `index--Wk1AOS9.js`, and passed `PHASE2_FRONTEND_FIX_CANDIDATE_PASS`, `PHASE2_FRONTEND_FIX_FORMAL_PASS`, and `PHASE2_FRONTEND_FIX_GATEWAY_PASS`. Formal image is `haizhi-hub-api:6.0.3-phase2-browser-fix`; stopped rollback container is `haizhi-hub-api-v602-browserrollback-20260824`.
+- PHASE2-IMPL-011D: Added `parse_requirement_text` shared-distance semantics for `上下游各N公里`, preserved separate upstream/downstream parsing, added two regression cases, and passed markers `PHASE2_PARSER_UNIT_PASS`, `PHASE2_PARSER_LIVE_CANDIDATE_PASS`, `PHASE2_PARSER_CANDIDATE_HEALTH_PASS`, `PHASE2_PARSER_FORMAL_HEALTH_PASS`, and `PHASE2_PARSER_FORMAL_GATEWAY_PASS`. Formal image is `haizhi-hub-api:6.0.2-phase2-parser`; stopped rollback container is `haizhi-hub-api-v601-parserrollback-20260824`.
+- PHASE2-IMPL-011C: Added a system instruction that permits only concise Chinese final answers, ignores `reasoning_content`, strips `<think>` blocks, extracts explicit final-answer sections, and falls back to deterministic structured/RAG facts whenever known reasoning-leak markers appear. Unit marker: `Ran 4 tests ... OK`. Live candidate markers: status 200, answer length 166, `PRIVATE_REASONING False`, `HAS_ALGORITHM True`. Formal image is `haizhi-hub-api:6.0.1-phase2-ai-output`; rollback container `haizhi-hub-api-v600-phase2-airollback-20260824` is retained.
+- PHASE2-IMPL-011B: Marker `PHASE2_UI_PERMISSION_DOCUMENT_ACCEPTANCE_PASS 17` verified dashboard role scoping, route/API denial, metadata-first document publish, authenticated preview/download, frontend bundle markers, and cleanup. Marker `PHASE2_SIX_CENTER_PRICE_VIEW_REGRESSION_PASS 19,8,14,17,10,6` verified all six center list/detail APIs, read-only write denial, project access denial, product price omission, price endpoint 403, solution BOM monetary omission, and cleanup.
+- PHASE2-IMPL-011A: Dify 1.16.1 setup remains `finished`; Moodle direct/gateway probes returned 303/200; formal Dify retrieval returned one real record and marker `DIFY_RETRIEVAL_MARKER True`; `/api/ai/chat` returned HTTP 200 with a 2,599-character answer; formal health on 18080 and 443 passed after the runtime-only Dify configuration correction. The prior runtime env was preserved at `/opt/haizhi-product-hub/.runtime.env.pre-phase2-dify-20260824`, and stopped rollback container `haizhi-hub-api-v600-pre-dify-runtime-20260824` was retained.
+- PHASE2-IMPL-010D: Passed markers `PHASE2_FULL_ROLLBACK_573_PASS`, `PHASE2_FULL_ROLLBACK_GATEWAY_PASS`, `PHASE2_AFTER_ROLLBACK_600_PASS`, and `PHASE2_ROLLBACK_RESTORE_COMPLETE`. Final Alembic output is `c3d4e5f60718 (head)`; production is back on Phase 2 after the rollback test.
+- PHASE2-IMPL-010B: Production Alembic reported `c3d4e5f60718 (head)`; formal direct port 18080 and gateway port 443 health passed; frontend entry is `index-DYEYy9ZP.js`; formal runtime retains UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; rollback container is `haizhi-hub-api-v573-phase2-rollback-20260824`. Isolated formal marker `PHASE2_UI_PERMISSION_DOCUMENT_ACCEPTANCE_PASS` passed with cleanup.
+- PHASE2-IMPL-010A: Generated `haizhi-postgres.dump`, `haizhi-minio.tgz`, `haizhi-runtime-config.tgz`, `dify-postgres.dump`, and `dify-config-volumes.tgz`; recorded their verified SHA-256 values in `SHA256SUMS`. No production service or data was changed during backup.
+- PHASE2-IMPL-009D: Deployed candidate frontend entry `index-DYEYy9ZP.js`; marker `PHASE2_UI_PERMISSION_DOCUMENT_ACCEPTANCE_PASS` verified homepage aggregates, read-only route/API denial, sales project visibility, metadata-first document draft/edit/publish, disabled-RAG rejection, authenticated preview/download, and cleanup. Restored the isolated candidate database, upgraded to `c3d4e5f60718`, replaced an invalid minimal-PDF test fixture with a valid ReportLab PDF, then passed `PHASE2_CANDIDATE_API_ACCEPTANCE_PASS` with project 6, two immutable BOM versions, Excel SHA-256 `554d0e1ecd72eb392970df47f8e502c6ea378638c59bcfabfc5d257f1c453507`, document 16, and migration `c3d4e5f60718`.
+- PHASE2-IMPL-009C: Added visible direct-route access denial in addition to backend 403 enforcement, permission-aware document navigation, role label correction for sales, editable document metadata, explicit publish without forced RAG enrollment, and knowledge synchronization only when the document is enabled. `npm run build` passed with `index-DYEYy9ZP.js` and `index-Br7JOFwG.css`.
+- PHASE2-IMPL-009B: Added homepage counts, core products, common scenes, role-scoped recent projects, recent updates, and popular model capabilities; replaced unauthenticated AI source anchors with bearer-token document access; localized requirement keys, BOM rule types, validation outcomes, and document states; hid BOM prices without `PRICE_VIEW`; added category, version, description, relation, applicable model/version, and AI-knowledge controls before upload. `npm run build` passed with `index-B42W5yBs.js` and `index-CzF39Re7.css`.
+- PHASE2-IMPL-009A: Added real homepage aggregate data to `/api/dashboard`, kept recent project configuration hidden without `BOM_VIEW`, scoped sales projects to their owner, and corrected clean-bootstrap role/permission definitions for documents, projects/BOM, prices, costs, and administration. `py_compile` and `git diff --check` passed.
+- PHASE2-IMPL-008: Added multi-sheet cell metadata to template analysis, click-to-map project fields, structured BOM field mapping, coordinate/sheet validation, manual mapping application during workbook rendering, generated read-only HTML effect preview, export data adjustment saved as a new immutable BOM version, full BOM version history, authenticated document preview/download actions, and candidate frontend bundle `index-Da_32jig.js`. Candidate marker `EXCEL_VISUAL_MAPPING_CANDIDATE_ACCEPTANCE_PASS 3 3` verified two-sheet analysis, manual cells, BOM expansion, merged cells, freeze panes, style retention, HTML preview, final XLSX content, and cleanup.
+- PHASE2-IMPL-007: Added `document_preview.py` and preview dependencies; DOCX and PPTX derive PDF, XLSX/XLSM derive read-only HTML, PDF/images/TXT remain direct; preview objects use separate MinIO keys and original downloads remain byte-identical. Unit suites passed `4 + 4`; live candidate marker `DOCUMENT_PREVIEW_CANDIDATE_ACCEPTANCE_PASS [18, 19, 20]` verified upload, READY state, preview media/content, SHA-256-identical original download, and cleanup.
+- PHASE2-IMPL-006: Added normalized `/datasets/{dataset_id}/retrieve` support and unit coverage (`Ran 4 tests ... OK`); rebuilt immutable candidate `haizhi-hub-api:6.0.0-phase2-aiqa`; candidate health passed; `/api/ai/chat` returned governed local document source id 17, `ANSWER_LEN 2474`, `HAS_RAG_TERMS True`, and `CONFIG_INTENT True` for the real bridge-collision query.
+- PHASE2-IMPL-005: Backed up Dify `.env` and Compose configuration at `/data/haizhi-product-hub/backups/20260824-053921-dify-celery-config`; corrected `CELERY_BROKER_URL` to the URL-encoded current Redis password; recreated only `api`, `worker`, and `worker_beat`; verified `BROKER_PING_OK`; reloaded Dify Nginx; synchronized candidate document 17 as Dify document `0ea2cdaf-b4f4-44bc-9247-363753b06e40`; and passed real retrieval with `RETRIEVE_STATUS 200`, one record, and `MARKER_MATCH True` for `桥梁防撞/AIS/船名OCR/偏航预警`.
+- PHASE2-IMPL-004: Candidate acceptance passed on `haizhi-phase2-api` at `127.0.0.1:18089` using an isolated PostgreSQL restored from the verified production snapshot. Marker payload recorded project id 6, two immutable BOM versions, Excel SHA-256 `5b3ed0fe828709b08351b38a7ac130fe23bf25f81f88d49aafcebbf5722783bd`, document id 16, and migration `c3d4e5f60718`.
+- PHASE2-IMPL-003: Fixed candidate-discovered role and download defects: sales now receives `BOM_EDIT` and `PRICE_VIEW` through the reversible migration; product-manager override checks use the actual `product_admin` role code; Chinese Excel download names are RFC-compatible percent-encoded; the acceptance suite creates and cleans an isolated true read-only role/user.
+- PHASE2-IMPL-002: Added the reversible `c3d4e5f60718` schema for requirement, rule, BOM, validation, Excel export, document preview, and knowledge-sync versioning; isolated upgrade, downgrade to `7a8c9d0e1f23`, and re-upgrade passed.
+- PHASE2-IMPL-001: Established branch `codex/phase2-business-implementation`, local build baseline, candidate staging directory `/tmp/haizhi-phase2-candidate-20260824-0020`, verified production snapshot, candidate image `haizhi-hub-api:6.0.0-phase2-runtime`, isolated PostgreSQL, and localhost candidate port 18089 without changing production.
+- PHASE2-R2-DESIGN-006: Created and extraction-tested `phase2-business-design-r2-review-20260823-225023.zip`; the expanded package contains 9 R2 PNG mockups, 6 annotated PNGs, 12 Markdown documents, and `PHASE2_FIELD_DICTIONARY_R2.xlsx`.
+- PHASE2-R2-DESIGN-005: Incrementally edited the R1 workbook with artifact-tool, added `AIKnowledgeQA`, updated the 10 requested sheets, rendered and visually inspected all 15 sheets, inspected the Document key range, and confirmed zero formula-error matches.
+- PHASE2-R2-DESIGN-004: Rendered 7 updated and 2 new 1600x900 mockups, corrected BOM editor clipping, generated 6 annotated review pages, and verified all 15 PNG outputs at exact dimensions with no banned UI names.
+- PHASE2-R2-DESIGN-003: Froze homepage, AI knowledge Q&A, structured-first knowledge, document-to-Dify synchronization, requirement/rule/validation versions, manual-BOM precedence, ERROR override, role-price, Excel mapping/preview, and Dify-entry decisions; recorded all 14 unchanged R1 mockups.
+- PHASE2-R2-DESIGN-002: Completed R2 A-L self-check with all items PASS and confirmed no formal runtime, database, migration, Dify or port-80 changes.
+- PHASE2-DESIGN-006: Created `phase2-business-design-review-20260823-213515/` and verified its matching ZIP by full extraction: 21 core PNGs, 7 annotated PNGs, 14 required Markdown design documents, `REVIEW_INDEX.md`, and `data/PHASE2_FIELD_DICTIONARY.xlsx` are present.
+- PHASE2-DESIGN-005: Built `PHASE2_FIELD_DICTIONARY.xlsx` with Home, AIConfigurator, AIRequirement, BomEditor, BomRule, Project, ProjectBom, BomVersion, ExcelTemplate, ExportPreview, ExportRecord, Document, DocumentRelation, and DifyConfig sheets; rendered every sheet, visually inspected all renders, inspected the BomEditor key range, and confirmed zero formula-error matches.
+- PHASE2-DESIGN-004: Rendered 21 high-fidelity 1600x900 business workflow pages and 7 numbered annotated pages; visually checked the homepage, BOM editor, export preview, document preview and all workbook sheet renders; all 28 core PNGs passed exact dimension validation.
+- PHASE2-DESIGN-003: Completed the Phase 2 flow, UI, field mapping, current-to-target, data model, API, BOM rule, Excel template, document center, Dify, port 80, future implementation and open-question specifications without changing production implementation.
+- PHASE2-DESIGN-002: Recorded the read-only baseline: local branch `feature/knowledge-centers-v3`, commit `1023e9a2112c7eb8292a4c0ec9a58f7a752fa21a`, production Alembic `7a8c9d0e1f23`, API image `haizhi-hub-api:5.7.3-ad-error-fix`, Dify 1.16.1 on internal 18081, Moodle on 18082 and the unchanged legacy Python 2.7 service on port 80.
 - AD-CONFIG-010: Root-caused the misleading frontend JSON error to an AD exception containing `NUL`, which PostgreSQL rejected while persisting the failed sync run. Added centralized LDAP error sanitization, JSON-safe failure persistence/response, robust frontend response parsing, explicit login-domain validation/help text, isolated marker `AD_NUL_ERROR_API_REGRESSION_PASS`, formal marker `PRODUCTION_AD_ERROR_FIX_PASS`, hardened deployment `haizhi-hub-api:5.7.3-ad-error-fix`, exact assets `index-BjXLl0fX.js` / `index-NXPMhlE1.css`, and rollback container `haizhi-hub-api-v572-adconfig-rollback-20260823`.
 - AD-CONFIG-008: Browser-verified the deployed System Management AD page at `http://10.1.2.1:443/`: manual enable switch, server type, LDAP/LDAPS protocol, host, port, timeout, administrator account, masked password, Base DN, login domain, user filter, Chinese default role, Connectivity Test, Save Configuration, and disabled-until-configured Manual Domain User Sync are all present and correctly laid out. Temporary browser acceptance account was deleted after validation.
 - AD-CONFIG-007: Tagged and deployed immutable `haizhi-hub-api:5.7.2-ad-config-ui`, restored the prior least-privilege runtime (`10001:10001`, read-only root filesystem, capability drop ALL, no-new-privileges, hardened `/tmp`), verified frontend assets `index-4PeU9K2z.js` / `index-Bh1FNCuB.css`, formal health through ports 18080 and 443, Alembic `7a8c9d0e1f23`, empty-by-default LDAP host/Base DN, and Chinese role display names; retained stopped `haizhi-hub-api-v571-adrollback-20260823`.
@@ -141,6 +176,19 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- PHASE2-IMPL-011J PASS: real in-app-browser responsive regression is 44/44 at 1920x1080, 1600x900, 1440x900 and 1366x768; homepage final widths are 1905/1905, 1585/1585, 1425/1425 and 1351/1351; six-center list/detail smoke is 12/12; console error/warn count is zero.
+- PHASE2-IMPL-011J PASS: exact meaningless project id 5 (`嗯嗯嗯`) was inspected, deleted through the authenticated API, and verified absent; acceptance project id 6 remains at immutable BOM V3.
+- PHASE2-IMPL-011I PASS: `PHASE2_LEGACY_PORT80_BACKUP_PASS`, `PHASE2_DIFY_PORT80_CANDIDATE_PASS`, and `PHASE2_DIFY_PORT80_FORMAL_PASS`; Dify setup reports `finished` through both port 80 and port 18081; 443 application health remains PASS.
+- PHASE2-IMPL-011H PASS: project id 6 real BOM V3, authenticated final Excel download, rendered workbook inspection, document id 14 preview/original download, and `PUBLISHED/CURRENT/SYNCED` knowledge state passed.
+- PHASE2-IMPL-004 PASS: `PHASE2_CANDIDATE_API_ACCEPTANCE_PASS`; real Product-backed BOM rows, manual-edit precedence, historical snapshot immutability, sales ERROR-override denial, administrator override audit, reader price/project denial, template formatting/content/hash, document governance and original-file download passed.
+- PHASE2-IMPL-003 PASS: local Python compileall and `git diff --check`; candidate sales permission binding, migration reapplication, product-manager role-code correction, and UTF-8 Excel download regression passed as part of the complete candidate suite.
+- PHASE2-IMPL-002 PASS: candidate migration `7a8c9d0e1f23 -> c3d4e5f60718 -> 7a8c9d0e1f23 -> c3d4e5f60718`; candidate health returned `runtime=fastapi-postgresql`.
+- PHASE2-R2-DESIGN-006 PASS: ZIP expanded successfully with 9 R2 mockups, 6 annotated pages, 12 R2 documents and the R2 field dictionary; 7 updated, 2 new and 14 unchanged counts reconcile to the approved R1/R2 scope.
+- PHASE2-R2-DESIGN-005 PASS: all 15 workbook sheets rendered and were visually reviewed; formula error scan matched zero entries and the R2 Document fields are populated.
+- PHASE2-R2-DESIGN-004 PASS: all 15 R2 review PNGs are non-empty 1600x900 images; mockup source contains zero `AI产品顾问`, `多智能体中心` or `知识库中心` matches.
+- PHASE2-DESIGN-006 PASS: matching ZIP expanded successfully; extracted package contains exactly 21 core mockup PNGs, 7 annotated PNGs, 14 required Markdown documents, the review index and the field dictionary workbook.
+- PHASE2-DESIGN-005 PASS: all 14 workbook sheets rendered and were visually inspected; the BomEditor key range inspection returned populated values and the workbook scan matched zero formula errors.
+- PHASE2-DESIGN-004 PASS: all 28 core/annotated screenshots are non-empty PNG files at exactly 1600x900; representative high-density pages passed visual review without obvious clipping, overlap or blank rendering.
 - AD error hotfix passed frontend production build, backend compileall, diff check, checksum transfer, immutable image build, control-byte unit test, login-domain validation test, isolated JSON 502/persistence regression, formal health/static/API tests, stale RUNNING-run repair, and hardened runtime verification.
 - AD 5.7.2 candidate and formal acceptance passed: frontend build, Python compileall, diff check, image build, migration upgrade/downgrade/re-upgrade, health, hardened runtime parity, manual configuration API validation, encrypted password persistence/no-response disclosure, blank-password preservation, connectivity failure handling, disabled-sync denial, Chinese roles, exact static assets, formal browser rendering, and temporary-account cleanup.
 - AD-APPROVAL-006 formal: PostgreSQL backup SHA-256 `042266a46bc48a5db1ed2c1fdec291e3f8f8c4a47fe8ecd88a52f53a129ba24f`; MinIO backup SHA-256 `180aeaf8e6378defef8920e9381af25776f311aadded72eb6af7a8abfb9aac4a`; Alembic `2f7b6c8d9e10`; hardened image `haizhi-hub-api:5.7.1-ad-approval`; direct health PASS; `5.7.0` rollback retained.
@@ -257,6 +305,9 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
+- Initial style-fix candidate bind to localhost port 18090 failed because the port was already occupied. The failed container was removed, candidate port 18086 was used, and all candidate/formal checks passed.
+- Initial six-center detail smoke used aggregate counts as record IDs and correctly returned not-found states. The actual first persisted IDs were queried and all 12 list/detail checks then passed.
+- PHASE2 candidate acceptance attempts before the final pass exposed and fixed: sales missing `BOM_EDIT`; non-canonical bridge-scene fixture selection; misuse of a sales-support account as an ordinary reader; contaminated isolated rules after interrupted runs; and an HTTP 500 from an unencoded Chinese Excel download filename. Each failure was diagnosed, fixed, the isolated database was restored from the verified snapshot, and the full suite was rerun to PASS.
 - Live AD authentication returned Active Directory subcode `52e`, meaning the supplied bind username/password was rejected. The screenshot also showed Login Domain incorrectly set to a Base DN; it must be `hilaicloud.com`. Candidate enumeration remains pending corrected credentials.
 - V3-D12 local execution of `tests/v3_price_security.py` could not start because both available Windows Python runtimes lack the installed SQLAlchemy dependency; the test itself compiles and must run inside the API image after deployment.
 - External `http://10.1.2.1:18080/` is blocked by firewall; port 443 is used as the temporary formal entry.
@@ -271,6 +322,7 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
+- Corrected Dify's stale Celery broker password to the URL-encoded active Redis password, refreshed the affected services and Nginx upstream resolution, and added governed real-dataset retrieval plus deterministic document-content fallback to AI Q&A.
 - Sanitized LDAP/AD control bytes before database persistence or HTTP response, preventing PostgreSQL `NUL` failures and preserving structured JSON errors; added frontend non-JSON fallback and rejected Base-DN-shaped Login Domain values.
 - Replaced environment-only AD configuration with administrator-managed LDAP/LDAPS settings, explicit enable/test/save/sync actions, encrypted password-at-rest handling, and blank-password update preservation; secrets are never returned by the API.
 - Changed AD synchronization from direct account mutation to pending candidate batches plus selected-only confirmation, so administrators explicitly control who may log in.
@@ -294,14 +346,18 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Added no-store UTF-8 CSV export and explicit price access audit reporting; restricted cost rendering and export commands to the correct permission sets.
 
 # SERVICES
-- Legacy: Python 2.7 + SQLite service managed by `haizhi-product-center`, port 80; preserve unchanged.
-- Formal: FastAPI backend, Vue static frontend, PostgreSQL, Redis.
+- Legacy Python 2.7/SQLite `haizhi-product-center` is stopped and disabled after a complete verified backup; its code and data were not deleted.
+- Formal: FastAPI/Vue/PostgreSQL/Redis/MinIO on port 443; Dify 1.16.1 on ports 80 and 18081; Moodle on port 18082 and `/moodle/`.
 
 # CONTAINERS
+- `haizhi-phase2-pg`: running isolated candidate PostgreSQL restored from the verified production snapshot; no production database writes.
+- `haizhi-phase2-api`: running candidate `haizhi-hub-api:6.0.0-phase2-runtime` at `127.0.0.1:18089`; health and complete Phase 2 candidate API acceptance pass.
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running `haizhi-hub-api:5.7.3-ad-error-fix` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api`: running `haizhi-hub-api:6.0.5-phase2-style-fix` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api-v604-stylerollback-20260824`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.4-phase2-download-fix`.
+- `haizhi-dify-port80`: running as UID/GID `101:101` with read-only root, capability drop `ALL`, `no-new-privileges`, and restart policy `unless-stopped`; proxies public port 80 to the existing Dify Nginx service.
 - `haizhi-hub-api-v572-adconfig-rollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.2-ad-config-ui`.
 - `haizhi-hub-api-v571-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.1-ad-approval`.
 - `haizhi-hub-api-v570-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.0-material-admin`.
@@ -316,19 +372,22 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - `haizhi-hub-api-v41-20260822-022807`: stopped retained rollback point on immutable `haizhi-hub-api:4.1`; candidate, 4.0, and pre-V3 stopped containers were removed.
 
 # PORTS
-- 80: legacy service, unchanged.
+- 80: formal Dify 1.16.1 login/console entry.
 - 443: formal Nginx gateway serving HaiZhi at `/` and Moodle at `/moodle/`; plain HTTP pending domain/certificate.
 - 18080: formal FastAPI/static frontend internal/new-service port.
+- 18081: retained direct Dify entry.
 - 18082: Moodle training service.
 - PostgreSQL and Redis are internal Docker network only.
 
 # DATABASE VERSION
-- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `7a8c9d0e1f23`.
+- PostgreSQL 16 Alpine container. Production schema is at Alembic revision `c3d4e5f60718`.
+- Isolated candidate schema is at Alembic revision `c3d4e5f60718`; upgrade/downgrade/re-upgrade passed after the Phase 2 role-binding change.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: immutable `haizhi-hub-api:5.7.3-ad-error-fix` (frontend bundle `index-BjXLl0fX.js`, stylesheet `index-NXPMhlE1.css`).
+- Formal backend/frontend deployed: immutable `haizhi-hub-api:6.0.5-phase2-style-fix` (frontend bundle `index-B6daGaE-.js`, stylesheet `index-Br7JOFwG.css` with corrected `data-v-fb4feb6a` scope).
+- Candidate runtime: `haizhi-hub-api:6.0.0-phase2-excel-ui` on localhost port 18089; exact candidate frontend entry is `index-Da_32jig.js` and includes real Dify synchronization/retrieval, derived document previews, and visual Excel mapping/export.
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
-- Local V3 project is a Git worktree on `feature/knowledge-centers-v3`.
+- Local project is a Git worktree on `codex/phase2-business-implementation`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
@@ -341,6 +400,7 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
+- Phase 2 implementation is intentionally uncommitted on `codex/phase2-business-implementation`: `backend/app/phase2.py`, `backend/app/models.py`, `backend/app/main.py`, `backend/requirements.txt`, migration `c3d4e5f60718`, candidate acceptance test, `frontend/src/components/Phase2Workspace.vue`, `frontend/src/AppV3.vue`, `frontend/src/router.ts`, and this checkpoint. All are saved locally; existing unrelated user artifacts remain untouched.
 - LDAP error hotfix source, frontend build assets, deployment state, and regression results are committed at `fbbe6eb`; no related application source remains uncommitted.
 - AD manual configuration implementation, migration, UI, deployed frontend assets, and deployment checkpoint are committed at `c125f4c`; no related application source remains uncommitted.
 - Material import, variant/commercial models, system administration, AD integration, migration `9d3f4a6b8c21`, and the runtime acceptance script are committed at `41c6adf`; only checkpoint updates and generated `frontend/tsconfig.tsbuildinfo` remain uncommitted among files touched by this phase.
@@ -350,7 +410,7 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
-- PASS: Dify 1.16.1 core services are healthy; setup is finished; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; chat app invocation reached the governed gateway and returned non-empty content; signature verification is restored to `true`.
+- PASS: Dify 1.16.1 core services are healthy on ports 80 and 18081; setup is finished; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; signature verification is `true`; real document synchronization and retrieval pass against dataset `6b164760-8c9b-4c37-b0f7-96864d88b9c3`.
 
 # MOODLE STATUS
 - PASS: persistent Moodle 5.0/MariaDB 11.4 stack, administrator login, representative course id 2, HaiZhi training association APIs, formal `/moodle/` publication, browser login, and authenticated course rendering pass.
@@ -366,6 +426,12 @@ CORRECT_LOGIN_DOMAIN_AND_AD_BIND_CREDENTIALS_THEN_RUN_CONNECTIVITY_TEST
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- Do not repeat the 44-route responsive regression, 12-route six-center smoke, or scoped-CSS diagnosis unless frontend assets change; formal marker is `PHASE2_STYLE_FIX_FORMAL_GATEWAY_PASS`.
+- Do not repeat the legacy port-80 backup or Dify sidecar cutover unless port routing changes; backup is `/data/haizhi-product-hub/backups/20260824-phase2-port80-cutover` and marker is `PHASE2_DIFY_PORT80_FORMAL_PASS`.
+- Do not repeat the Excel visual-mapping candidate acceptance unless template analysis, mapping, workbook rendering, or export persistence changes; marker is `EXCEL_VISUAL_MAPPING_CANDIDATE_ACCEPTANCE_PASS`.
+- Do not repeat the Phase 2 document-preview dependency build or DOCX/PPTX/XLSX upload-preview-download cleanup acceptance unless preview code or runtime dependencies change.
+- Do not repeat the Phase 2 base candidate image creation, production snapshot checksum verification, or `c3d4e5f60718` migration rollback cycle unless runtime/schema source changes invalidate them.
+- Do not repeat the pre-fix candidate failures. The clean final candidate marker is `PHASE2_CANDIDATE_API_ACCEPTANCE_PASS`; rerun the full suite only after subsequent Phase 2 integration changes.
 - Do not repeat the 5.7.3 NUL-error diagnosis, isolated regression, formal deployment, or hardened runtime verification unless LDAP error handling/UI code changes.
 - Do not repeat the 5.7.2 build, isolated migration rollback cycle, `AD_CONFIG_API_ACCEPTANCE_PASS`, formal backup, deployment, static/API/browser acceptance, or temporary-account cleanup unless AD configuration code/schema/runtime changes.
 - Do not prefill, hardcode, or move LDAP host/Base DN/bind credentials back into backend environment defaults; configuration is intentionally administrator-managed in the UI.

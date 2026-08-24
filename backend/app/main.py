@@ -13,6 +13,7 @@ from .models import *
 from .seed import bootstrap,ensure_v3_seed,pwd
 from .config import settings
 from .directory_crypto import decrypt_directory_password,encrypt_directory_password
+from .document_preview import build_preview,preview_capable
 from .storage import storage
 from .knowledge import router as knowledge_router
 security=HTTPBearer(auto_error=False)
@@ -184,10 +185,11 @@ def documents(center_type:str|None=None,center_id:int|None=None,db:Session=Depen
  query=select(DocumentAsset)
  if center_type is not None:query=query.where(DocumentAsset.center_type==center_type)
  if center_id is not None:query=query.where(DocumentAsset.center_id==center_id)
+ if 'DOCUMENT_EDIT' not in permission_codes(u):query=query.where(DocumentAsset.status=='PUBLISHED',DocumentAsset.document_status!='OBSOLETE')
  can_download='DOCUMENT_DOWNLOAD' in permission_codes(u)
- return [{'id':x.id,'name':x.name,'mimeType':x.mime_type,'path':x.path,'productId':x.product_id,'sceneId':x.scene_id,'tenderId':x.tender_id,'centerType':x.center_type,'centerId':x.center_id,'canPreview':True,'canDownload':can_download,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(query.order_by(DocumentAsset.updated_at.desc()))]
+ return [{'id':x.id,'name':x.name,'originalFileName':x.original_file_name or x.name,'mimeType':x.mime_type,'fileSize':x.file_size,'category':x.category,'version':x.version,'description':x.description,'status':x.status,'documentStatus':x.document_status,'applicableModels':x.applicable_models,'applicableVersions':x.applicable_versions,'knowledgeEnabled':x.knowledge_enabled,'knowledgeStatus':x.knowledge_status,'knowledgeSyncError':x.knowledge_sync_error,'productId':x.product_id,'sceneId':x.scene_id,'tenderId':x.tender_id,'centerType':x.center_type,'centerId':x.center_id,'canPreview':preview_capable(x.original_file_name or x.name,x.mime_type),'canDownload':can_download,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(query.order_by(DocumentAsset.updated_at.desc()))]
 @app.post('/api/documents',status_code=201)
-async def upload_document(file:UploadFile=File(...),product_id:int|None=Form(None),scene_id:int|None=Form(None),tender_id:int|None=Form(None),center_type:str|None=Form(None),center_id:int|None=Form(None),db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
+async def upload_document(file:UploadFile=File(...),product_id:int|None=Form(None),scene_id:int|None=Form(None),tender_id:int|None=Form(None),center_type:str|None=Form(None),center_id:int|None=Form(None),category:str=Form('产品资料'),version:str=Form('V1.0'),description:str=Form(''),applicable_models:str=Form(''),applicable_versions:str=Form(''),knowledge_enabled:bool=Form(False),db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
  data=await file.read()
  if not data or len(data)>50*1024*1024: raise HTTPException(413,'文件为空或超过50MB')
  if product_id and not db.get(Product,product_id):raise HTTPException(422,'产品不存在')
@@ -201,8 +203,16 @@ async def upload_document(file:UploadFile=File(...),product_id:int|None=Form(Non
  object_name=f'{uuid.uuid4().hex}-{os.path.basename(file.filename or "document")}'
  try: path=storage.put(object_name,data,file.content_type or 'application/octet-stream')
  except Exception as e: raise HTTPException(503,'对象存储不可用') from e
- rec=DocumentAsset(name=file.filename or object_name,path=path,mime_type=file.content_type or 'application/octet-stream',product_id=product_id,scene_id=scene_id,tender_id=tender_id,center_type=center_type,center_id=center_id);db.add(rec);db.flush();audit(db,u,'CREATE','document',rec.id,{'name':rec.name,'centerType':center_type,'centerId':center_id});db.commit();db.refresh(rec)
- return {'id':rec.id,'name':rec.name,'path':rec.path,'mimeType':rec.mime_type,'productId':rec.product_id,'sceneId':rec.scene_id,'tenderId':rec.tender_id,'centerType':rec.center_type,'centerId':rec.center_id,'canPreview':True,'canDownload':'DOCUMENT_DOWNLOAD' in permission_codes(u)}
+ rec=DocumentAsset(name=file.filename or object_name,original_file_name=file.filename or object_name,path=path,mime_type=file.content_type or 'application/octet-stream',file_size=len(data),category=category,version=version,description=description,status='DRAFT',document_status='CURRENT',applicable_models=applicable_models,applicable_versions=applicable_versions,knowledge_enabled=knowledge_enabled,knowledge_status='NOT_SYNCED',uploaded_by=u.id,product_id=product_id,scene_id=scene_id,tender_id=tender_id,center_type=center_type,center_id=center_id);db.add(rec);db.flush()
+ try:
+  preview=build_preview(rec.original_file_name,rec.mime_type,data)
+  if preview:
+   preview_name=f'previews/{uuid.uuid4().hex}{preview.extension}';preview_path=storage.put(preview_name,preview.data,preview.mime_type);db.add(DocumentPreview(document_id=rec.id,preview_type=preview.preview_type,file_path=preview_path,mime_type=preview.mime_type,status='READY'))
+ except Exception as exc:
+  db.add(DocumentPreview(document_id=rec.id,preview_type='UNAVAILABLE',file_path='',mime_type='',status='FAILED',error_message=str(exc)[:500]))
+ audit(db,u,'CREATE','document',rec.id,{'name':rec.name,'centerType':center_type,'centerId':center_id});db.commit();db.refresh(rec)
+ preview_row=db.scalar(select(DocumentPreview).where(DocumentPreview.document_id==rec.id).order_by(DocumentPreview.id.desc()))
+ return {'id':rec.id,'name':rec.name,'mimeType':rec.mime_type,'fileSize':rec.file_size,'status':rec.status,'documentStatus':rec.document_status,'knowledgeEnabled':rec.knowledge_enabled,'knowledgeStatus':rec.knowledge_status,'productId':rec.product_id,'sceneId':rec.scene_id,'tenderId':rec.tender_id,'centerType':rec.center_type,'centerId':rec.center_id,'canPreview':preview_row is None or preview_row.status=='READY','previewStatus':preview_row.status if preview_row else 'DIRECT','canDownload':'DOCUMENT_DOWNLOAD' in permission_codes(u)}
 def object_response(rec,disposition):
  try:
   response=storage.get(rec.path.split('/',1)[1]);data=response.read();response.close();response.release_conn()
@@ -212,7 +222,20 @@ def object_response(rec,disposition):
 def preview_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_VIEW'))):
  rec=db.get(DocumentAsset,did)
  if not rec:raise HTTPException(404,'文件不存在')
- return object_response(rec,'inline')
+ preview=db.scalar(select(DocumentPreview).where(DocumentPreview.document_id==did).order_by(DocumentPreview.id.desc()))
+ if preview and preview.status=='FAILED':raise HTTPException(422,preview.error_message or '预览生成失败')
+ if preview and preview.status=='READY':
+  try:
+   response=storage.get(preview.file_path.split('/',1)[1]);data=response.read();response.close();response.release_conn()
+  except Exception as exc:raise HTTPException(503,'预览文件不可用') from exc
+  suffix='.pdf' if preview.mime_type=='application/pdf' else '.html';name=os.path.splitext(rec.name)[0]+suffix
+  return Response(data,media_type=preview.mime_type,headers={'Content-Disposition':f"inline; filename*=UTF-8''{urllib.parse.quote(name)}",'Cache-Control':'no-store'})
+ try:
+  response=storage.get(rec.path.split('/',1)[1]);original=response.read();response.close();response.release_conn();derived=build_preview(rec.original_file_name or rec.name,rec.mime_type,original)
+ except Exception as exc:raise HTTPException(422,str(exc)[:500] or '预览生成失败') from exc
+ if not derived:return Response(original,media_type=rec.mime_type,headers={'Content-Disposition':f"inline; filename*=UTF-8''{urllib.parse.quote(rec.name)}",'Cache-Control':'no-store'})
+ preview_path=storage.put(f'previews/{uuid.uuid4().hex}{derived.extension}',derived.data,derived.mime_type);db.add(DocumentPreview(document_id=rec.id,preview_type=derived.preview_type,file_path=preview_path,mime_type=derived.mime_type,status='READY'));db.commit();name=os.path.splitext(rec.name)[0]+derived.extension
+ return Response(derived.data,media_type=derived.mime_type,headers={'Content-Disposition':f"inline; filename*=UTF-8''{urllib.parse.quote(name)}",'Cache-Control':'no-store'})
 @app.get('/api/documents/{did}/download')
 def download_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_DOWNLOAD'))):
  rec=db.get(DocumentAsset,did)
@@ -222,7 +245,11 @@ def download_document(did:int,db:Session=Depends(session),u:User=Depends(permit(
 def delete_document(did:int,db:Session=Depends(session),u:User=Depends(permit('DOCUMENT_EDIT'))):
  rec=db.get(DocumentAsset,did)
  if not rec:raise HTTPException(404,'文件不存在')
- try:storage.delete(rec.path.split('/',1)[1])
+ previews=list(db.scalars(select(DocumentPreview).where(DocumentPreview.document_id==did)))
+ try:
+  storage.delete(rec.path.split('/',1)[1])
+  for preview in previews:
+   if preview.file_path:storage.delete(preview.file_path.split('/',1)[1])
  except Exception as exc:raise HTTPException(503,'对象存储不可用') from exc
  db.query(DocumentChunk).filter(DocumentChunk.document_id==did).delete();audit(db,u,'DELETE','document',did,{'name':rec.name});db.delete(rec);db.commit()
 @app.post('/api/media/images',status_code=201)
@@ -287,7 +314,19 @@ def login(x:Login,request:Request,db:Session=Depends(session)):
 def me(u:User=Depends(user)):return {'username':u.username,'displayName':u.display_name,'role':u.role.code,'permissions':sorted(permission_codes(u))}
 @app.get('/api/dashboard')
 def dashboard(u:User=Depends(user),db:Session=Depends(session)):
- return {'metrics':{'products':db.scalar(select(func.count(Product.id))),'software':db.scalar(select(func.count(Software.id))),'algorithms':db.scalar(select(func.count(Algorithm.id))),'capabilities':db.scalar(select(func.count(Capability.id))),'scenes':db.scalar(select(func.count(Scene.id))),'solutions':db.scalar(select(func.count(Solution.id))),'projects':db.scalar(select(func.count(Project.id)))}}
+ metrics={'products':db.scalar(select(func.count(Product.id))),'software':db.scalar(select(func.count(Software.id))),'algorithms':db.scalar(select(func.count(Algorithm.id))),'capabilities':db.scalar(select(func.count(Capability.id))),'scenes':db.scalar(select(func.count(Scene.id))),'solutions':db.scalar(select(func.count(Solution.id)))}
+ products=list(db.scalars(select(Product).order_by(Product.updated_at.desc()).limit(4)))
+ scenes=list(db.scalars(select(Scene).where(Scene.status=='PUBLISHED').order_by(Scene.updated_at.desc()).limit(4)))
+ capabilities=list(db.scalars(select(Capability).where(Capability.status=='SUPPORTED').order_by(Capability.updated_at.desc()).limit(6)))
+ updates=[]
+ for kind,label,model,path in [('products','产品',Product,'/products/'),('software','软件',Software,'/software/'),('algorithms','算法',Algorithm,'/algorithms/'),('model-capabilities','模型能力',Capability,'/model-capabilities/'),('scenes','场景',Scene,'/scenes/'),('solutions','方案',Solution,'/solutions/')]:
+  for item in db.scalars(select(model).order_by(model.updated_at.desc()).limit(2)):updates.append({'type':kind,'typeLabel':label,'id':item.id,'name':item.name,'url':path+str(item.id),'updatedAt':item.updated_at.isoformat()})
+ projects=[]
+ if 'BOM_VIEW' in permission_codes(u):
+  query=select(Project).order_by(Project.updated_at.desc()).limit(5)
+  if u.role.code=='sales':query=query.where(Project.sales_owner_id==u.id)
+  projects=[{'id':item.id,'name':item.name,'customer':item.customer,'status':item.status,'scene':item.scene.name if item.scene else '','updatedAt':item.updated_at.isoformat()} for item in db.scalars(query)]
+ return {'metrics':metrics,'coreProducts':[{'id':item.id,'name':item.name,'modelCode':item.model_code,'summary':item.summary,'image':item.main_image} for item in products],'commonScenes':[{'id':item.id,'name':item.name,'category':item.category,'summary':item.summary,'image':item.cover_image} for item in scenes],'recentProjects':projects,'recentUpdates':sorted(updates,key=lambda item:item['updatedAt'],reverse=True)[:6],'popularCapabilities':[{'id':item.id,'name':item.name,'category':item.category,'functionType':item.function_type,'version':item.version} for item in capabilities]}
 @app.get('/api/products')
 def products(q:str='',db:Session=Depends(session),u:User=Depends(permit('KNOWLEDGE_VIEW'))):
  st=select(Product).order_by(Product.updated_at.desc())
@@ -528,7 +567,7 @@ def delete_catalog(kind:str,rid:int,db:Session=Depends(session),u:User=Depends(u
  audit(db,u,'DELETE',kind,rid,{'name':rec.name});db.delete(rec)
  try:db.commit()
  except Exception as exc:db.rollback();raise HTTPException(409,'记录仍被业务数据引用') from exc
-@app.post('/api/bom/recommend')
+@app.post('/api/legacy/bom/recommend',include_in_schema=False)
 def recommend(x:BomIn,u:User=Depends(permit('BOM_EDIT'))):
  items=[{'model':'HZ-BC-400','name':'桥梁防撞综合系统','quantity':1,'unit':'套','reason':'桥梁防撞基础平台'}]
  if x.ptz_count:items.append({'model':'HZ-VC-700','name':'航道视频联动终端','quantity':x.ptz_count,'unit':'台','reason':'球机联动数量来自需求'})
@@ -539,20 +578,20 @@ def recommend(x:BomIn,u:User=Depends(permit('BOM_EDIT'))):
  if x.vhf:items.append({'model':'HZ-VHF-01','name':'VHF通信终端','quantity':1,'unit':'套','reason':'VHF通信'})
  coverage=['船舶探测']+(['AIS融合'] if x.ais else [])+(['船名OCR'] if x.ocr else [])+(['偏航预警'] if x.yaw else [])+(['球机联动'] if x.ptz_count else [])+(['超高预警'] if x.overheight else [])+(['VHF通信'] if x.vhf else [])
  return {'items':items,'validation':{'status':'PASS','coverage':coverage}}
-@app.get('/api/projects')
+@app.get('/api/legacy/projects',include_in_schema=False)
 def projects(db:Session=Depends(session),u:User=Depends(permit('BOM_VIEW'))):
  return [{'id':x.id,'name':x.name,'customer':x.customer,'region':x.region,'scene':x.scene.name,'bomVersion':x.bom_version,'updatedAt':x.updated_at.isoformat()} for x in db.scalars(select(Project).order_by(Project.updated_at.desc()))]
-@app.post('/api/projects',status_code=201)
+@app.post('/api/legacy/projects',status_code=201,include_in_schema=False)
 def create_project(x:ProjectIn,db:Session=Depends(session),u:User=Depends(permit('BOM_EDIT'))):
  if not db.get(Scene,x.scene_id):raise HTTPException(422,'场景不存在')
  if not x.bom_json:raise HTTPException(422,'BOM不能为空')
  rec=Project(name=x.name,customer=x.customer,region=x.region,scene_id=x.scene_id,requirements_json=json.dumps(x.requirements_json,ensure_ascii=False),bom_json=json.dumps(x.bom_json,ensure_ascii=False));db.add(rec);db.commit();db.refresh(rec);return {'id':rec.id,'name':rec.name,'bomVersion':rec.bom_version}
-@app.get('/api/projects/{pid}')
+@app.get('/api/legacy/projects/{pid}',include_in_schema=False)
 def project_detail(pid:int,db:Session=Depends(session),u:User=Depends(permit('BOM_VIEW'))):
  rec=db.get(Project,pid)
  if not rec:raise HTTPException(404,'项目不存在')
  return {'id':rec.id,'name':rec.name,'customer':rec.customer,'region':rec.region,'sceneId':rec.scene_id,'scene':rec.scene.name,'requirements':json.loads(rec.requirements_json),'bom':json.loads(rec.bom_json),'bomVersion':rec.bom_version,'updatedAt':rec.updated_at.isoformat()}
-@app.patch('/api/projects/{pid}')
+@app.patch('/api/legacy/projects/{pid}',include_in_schema=False)
 def update_project(pid:int,x:ProjectPatch,db:Session=Depends(session),u:User=Depends(permit('BOM_EDIT'))):
  rec=db.get(Project,pid)
  if not rec:raise HTTPException(404,'项目不存在')
@@ -560,7 +599,7 @@ def update_project(pid:int,x:ProjectPatch,db:Session=Depends(session),u:User=Dep
  if values.get('scene_id') and not db.get(Scene,values['scene_id']):raise HTTPException(422,'场景不存在')
  for key,value in values.items():setattr(rec,key,json.dumps(value,ensure_ascii=False) if key in {'requirements_json','bom_json'} else value)
  rec.bom_version+=1;audit(db,u,'UPDATE','project',pid,{'bomVersion':rec.bom_version});db.commit();return {'id':rec.id,'name':rec.name,'bomVersion':rec.bom_version}
-@app.delete('/api/projects/{pid}',status_code=204)
+@app.delete('/api/legacy/projects/{pid}',status_code=204,include_in_schema=False)
 def delete_project(pid:int,db:Session=Depends(session),u:User=Depends(permit('BOM_EDIT'))):
  rec=db.get(Project,pid)
  if not rec:raise HTTPException(404,'项目不存在')
@@ -749,6 +788,9 @@ async def ai(x:BomIn,u:User=Depends(user),db:Session=Depends(session)):
   message=r.json()['choices'][0]['message'];content=message.get('content') or message.get('reasoning') or message.get('reasoning_content') or '模型已响应，但未返回可展示文本';db.add(AiInteractionLog(request_id=rid,user_id=u.id,provider='local-llm',model_id=settings.ai_model,latency_ms=int((time.time()-started)*1000),success=True));db.commit();return {'requestId':rid,'mode':'llm','content':content}
  except Exception as e:
   db.add(AiInteractionLog(request_id=rid,user_id=u.id,provider='local-llm',model_id=settings.ai_model,latency_ms=int((time.time()-started)*1000),success=False,failure_reason=str(e)[:300]));db.commit();return {'requestId':rid,'mode':'rule-fallback','content':'AI服务暂不可用，已切换至规则式配单。'}
+
+from .phase2 import build_phase2_router
+app.include_router(build_phase2_router(user,permit,permission_codes,audit))
 
 # Frozen V3 aliases keep knowledge-center writes on the same canonical paths as reads.
 # These routes are declared after specific APIs so existing business endpoints retain priority.
