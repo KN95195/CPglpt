@@ -1,22 +1,24 @@
 # FINAL OBJECTIVE
-Deliver the V3.0 six-knowledge-center edition of 海智产品中心 from the frozen PRD baseline: 产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心. Reach `READY FOR PRODUCT/UI REVIEW` only after fields, same-page editing, relation drawers, PRICE_VIEW security, clean semantic seed data, responsive browser E2E, screenshots, and the final Word acceptance report pass. Preserve legacy port 80 and the currently accessible API 3.20 test version until the V3 replacement is built and verified.
+Complete `PHASE 2 BUSINESS IMPLEMENTATION` for 海智产品中心: AI knowledge Q&A, intelligent configuration, project BOM, Excel template mapping/export, document center, Dify/RAG, production deployment, full acceptance, backup/rollback, and final reports. End only as `PHASE 2 BUSINESS IMPLEMENTATION READY` or `PHASE 2 BUSINESS IMPLEMENTATION NOT READY` with exact external blockers recorded.
 
 # CURRENT PHASE
 PHASE2_BUSINESS_IMPLEMENTATION
 
 # CURRENT BUSINESS LOOP
-The formal PHASE 2 BUSINESS IMPLEMENTATION directive authorizes implementation from the approved R2 baseline. Work proceeds in an isolated implementation branch and candidate environment; production port 443, production data, Dify 1.16.1, Moodle, and legacy port 80 remain unchanged until backup, candidate migration, complete acceptance, and controlled cutover pass.
+All executable Phase 2 implementation, candidate acceptance, production cutover, browser regression, backup/rollback, report generation, evidence cleanup, and package verification are complete. Final status is NOT READY only because live AD bind still returns external `52e invalidCredentials`; trusted HTTPS also awaits an external domain and certificate.
 
 # LAST SUCCESSFUL STEP
-PHASE2-IMPL-011J: Deployed immutable `haizhi-hub-api:6.0.5-phase2-style-fix`, closed the production scoped-CSS mismatch, passed 44/44 responsive route checks and 12/12 six-center list/detail browser checks with zero console warnings/errors, removed the exact meaningless project `嗯嗯嗯`, and completed the backed-up/reversible Dify port-80 cutover.
+PHASE2-IMPL-012: Generated all nine Markdown reports and the formal Word acceptance report, visually verified all 19 rendered pages, replaced the invalid document-center screenshot with fresh formal evidence, disabled temporary acceptance user id 15, stopped the temporary style candidate, and prepared the final NOT READY package state.
 
 # CURRENT STEP
-PHASE2-IMPL-012_FINAL_REPORT_PACKAGE_COMMIT_AND_CHECKPOINT
+PHASE2_BUSINESS_IMPLEMENTATION_NOT_READY_FINAL
 
 # NEXT EXACT STEP
-GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
+WAITING_FOR_EXTERNAL_AD_CREDENTIAL_CORRECTION_AND_TRUSTED_TLS_INPUT
 
 # COMPLETED STEPS
+- PHASE2-IMPL-012B: Packaged `phase2-business-implementation-20260824-final.zip` with 80 entries, verified required Word/XLSX/manifest entries, excluded generated dependency caches, and verified SHA-256 `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
+- PHASE2-IMPL-012: Created 9/9 required Markdown reports and `海智产品中心_Phase2业务实施验收报告.docx`; exported the report to PDF, rasterized and visually inspected all 19 pages, fixed oversized image scaling, replaced the malformed document-center screenshot from the live 6.0.5 page, disabled the exact temporary acceptance account id 15 after physical deletion was correctly prevented by retained audit references, stopped `haizhi-phase2-style-candidate`, and reset browser viewport state.
 - PHASE2-IMPL-011J: Built candidate `6.0.5`, passed candidate health/security/style checks, retained stopped rollback container `haizhi-hub-api-v604-stylerollback-20260824`, and deployed the same immutable image with UID/GID `10001:10001`, read-only root, capability drop `ALL`, `no-new-privileges`, and noexec/nosuid `/tmp`. Formal direct and 443 health, CSS scope, and Alembic `c3d4e5f60718` passed.
 - PHASE2-IMPL-011I: Backed up the legacy port-80 service code, SQLite database, environment file, and systemd unit with verified SHA-256 at `/data/haizhi-product-hub/backups/20260824-phase2-port80-cutover`; disabled the legacy unit without deleting files; published Dify through hardened `haizhi-dify-port80`; verified browser title/login UI and `setup=finished` on ports 80 and 18081 while port 443 remained healthy.
 - PHASE2-IMPL-011H: Production project `桥梁防撞业务验收项目-20260824` (id 6) passed structured parsing for `上下游各3公里`, real BOM recommendation, quantity/manual-note adjustment, 3/0/0 validation, immutable V2/V3 history, visual Excel mapping, effect preview, authenticated XLSX download, and workbook content/style inspection. Published document id 14 is `PUBLISHED`, `CURRENT`, `knowledgeEnabled=true`, and `knowledgeStatus=SYNCED`; draft synchronization denial and authenticated preview/original download passed.
@@ -176,6 +178,12 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- `PHASE2_FINAL_ZIP_VERIFY_PASS`: 80 ZIP entries; required Word report, Excel sample, and package manifest present; SHA-256 matched the companion checksum file.
+- `PHASE2_REPORT_STRUCTURE_QA_PASS`: 9/9 required Markdown reports exist; Word report contains 71 paragraphs, 16 tables, 8 evidence figures, and 1 section.
+- `PHASE2_WORD_RENDER_QA_PASS 19/19`: every final report page visually inspected at original resolution with no clipping, overlap, broken table, missing glyph, or footer/header defect.
+- `PHASE2_DOCUMENT_SCREENSHOT_RECAPTURE_PASS`: formal `/documents` DOM and screenshot show the PRD document as 已发布 / 当前有效 / 已同步 with preview, original download, and edit actions.
+- `PHASE2_TEMP_USER_15_DISABLED_PASS`: exact browser acceptance username verified and disabled after the audit-preserving database correctly rejected physical deletion.
+- `PHASE2_STYLE_CANDIDATE_STOPPED_PASS`: temporary style candidate is exited; formal 6.0.5 and stopped 6.0.4 rollback remain preserved.
 - PHASE2-IMPL-011J PASS: real in-app-browser responsive regression is 44/44 at 1920x1080, 1600x900, 1440x900 and 1366x768; homepage final widths are 1905/1905, 1585/1585, 1425/1425 and 1351/1351; six-center list/detail smoke is 12/12; console error/warn count is zero.
 - PHASE2-IMPL-011J PASS: exact meaningless project id 5 (`嗯嗯嗯`) was inspected, deleted through the authenticated API, and verified absent; acceptance project id 6 remains at immutable BOM V3.
 - PHASE2-IMPL-011I PASS: `PHASE2_LEGACY_PORT80_BACKUP_PASS`, `PHASE2_DIFY_PORT80_CANDIDATE_PASS`, and `PHASE2_DIFY_PORT80_FORMAL_PASS`; Dify setup reports `finished` through both port 80 and port 18081; 443 application health remains PASS.
@@ -305,6 +313,7 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
+- Final cleanup physical DELETE of temporary user id 15 returned HTTP 500 because historical audit rows retain a required user foreign key. The exact account was subsequently disabled through the authenticated administration API and verified unable to remain enabled; audit history was preserved.
 - Initial style-fix candidate bind to localhost port 18090 failed because the port was already occupied. The failed container was removed, candidate port 18086 was used, and all candidate/formal checks passed.
 - Initial six-center detail smoke used aggregate counts as record IDs and correctly returned not-found states. The actual first persisted IDs were queried and all 12 list/detail checks then passed.
 - PHASE2 candidate acceptance attempts before the final pass exposed and fixed: sales missing `BOM_EDIT`; non-canonical bridge-scene fixture selection; misuse of a sales-support account as an ordinary reader; contaminated isolated rules after interrupted runs; and an HTTP 500 from an unencoded Chinese Excel download filename. Each failure was diagnosed, fixed, the isolated database was restored from the verified snapshot, and the full suite was rerun to PASS.
@@ -318,6 +327,7 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
+- Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - Live AD synchronization cannot complete until Login Domain is corrected to `hilaicloud.com` and the domain administrator confirms the `ldapreader@hilaicloud.com` password/account is enabled, unlocked, and not expired.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
@@ -350,6 +360,7 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 - Formal: FastAPI/Vue/PostgreSQL/Redis/MinIO on port 443; Dify 1.16.1 on ports 80 and 18081; Moodle on port 18082 and `/moodle/`.
 
 # CONTAINERS
+- `haizhi-phase2-style-candidate`: stopped after final style verification; retained only as a non-running diagnostic artifact.
 - `haizhi-phase2-pg`: running isolated candidate PostgreSQL restored from the verified production snapshot; no production database writes.
 - `haizhi-phase2-api`: running candidate `haizhi-hub-api:6.0.0-phase2-runtime` at `127.0.0.1:18089`; health and complete Phase 2 candidate API acceptance pass.
 - `haizhi-hub-postgres`: running.
@@ -391,7 +402,8 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
-- Local project branch: `feature/knowledge-centers-v3`.
+- Local project branch: `codex/phase2-business-implementation`.
+- Phase 2 implementation commit: `1c91a3a70ff8e48da710875e2f7c517634e89d2a` (`feat: deliver phase 2 business workflows`).
 - LDAP error sanitization, frontend response fallback, login-domain validation, and 5.7.3 deployment checkpoint commit: `fbbe6eb` (`fix: sanitize LDAP errors and validate login domain`).
 - AD manual configuration implementation and deployment checkpoint commit: `c125f4c` (`feat: add manual AD directory configuration`).
 - Material/system-administration implementation commit: `41c6adf` (`feat: import official materials and add system administration`).
@@ -400,7 +412,7 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 - Local acceptance report commit: `3c3bee2e5135665b7add2c13d57b6215d057256b`.
 
 # UNCOMMITTED CODE
-- Phase 2 implementation is intentionally uncommitted on `codex/phase2-business-implementation`: `backend/app/phase2.py`, `backend/app/models.py`, `backend/app/main.py`, `backend/requirements.txt`, migration `c3d4e5f60718`, candidate acceptance test, `frontend/src/components/Phase2Workspace.vue`, `frontend/src/AppV3.vue`, `frontend/src/router.ts`, and this checkpoint. All are saved locally; existing unrelated user artifacts remain untouched.
+- Phase 2 implementation is committed at `1c91a3a`; only final reports/evidence/checkpoint/package metadata are pending the final delivery commit. `frontend/tsconfig.tsbuildinfo` remains intentionally excluded generated metadata; unrelated existing artifacts remain untouched.
 - LDAP error hotfix source, frontend build assets, deployment state, and regression results are committed at `fbbe6eb`; no related application source remains uncommitted.
 - AD manual configuration implementation, migration, UI, deployed frontend assets, and deployment checkpoint are committed at `c125f4c`; no related application source remains uncommitted.
 - Material import, variant/commercial models, system administration, AD integration, migration `9d3f4a6b8c21`, and the runtime acceptance script are committed at `41c6adf`; only checkpoint updates and generated `frontend/tsconfig.tsbuildinfo` remain uncommitted among files touched by this phase.
@@ -426,6 +438,7 @@ GENERATE_NINE_MARKDOWN_REPORTS_AND_RENDER_VERIFIED_WORD_ACCEPTANCE_REPORT
 - Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
 
 # DO NOT REPEAT
+- Do not regenerate or recompress the final package unless a delivered report/evidence file changes. Verified ZIP SHA-256 is `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
 - Do not repeat the 44-route responsive regression, 12-route six-center smoke, or scoped-CSS diagnosis unless frontend assets change; formal marker is `PHASE2_STYLE_FIX_FORMAL_GATEWAY_PASS`.
 - Do not repeat the legacy port-80 backup or Dify sidecar cutover unless port routing changes; backup is `/data/haizhi-product-hub/backups/20260824-phase2-port80-cutover` and marker is `PHASE2_DIFY_PORT80_FORMAL_PASS`.
 - Do not repeat the Excel visual-mapping candidate acceptance unless template analysis, mapping, workbook rendering, or export persistence changes; marker is `EXCEL_VISUAL_MAPPING_CANDIDATE_ACCEPTANCE_PASS`.
