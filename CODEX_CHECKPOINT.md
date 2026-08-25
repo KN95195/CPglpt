@@ -8,15 +8,16 @@ PHASE2_UI_INTERACTION_FINAL_POLISH
 UI productization of the existing real Phase 2 flows: home AI portal, intelligent configuration, project/BOM, Excel mapping/export, and document center.
 
 # LAST SUCCESSFUL STEP
-UI-POLISH-D6: Deployed immutable formal `haizhi-hub-api:6.1.0-ui-polish`, verified exact candidate/formal image identity, production health, Alembic head, hardened runtime, front-end entry, backup/rollback, reports and evidence package.
+OPS-PORT-SWAP-20260825: Moved the formal business gateway to public port 80 and the hardened Dify proxy to public port 443, preserved rollback state, reset the Dify administrator password through the official Flask CLI, and verified the new credentials through the Dify login API.
 
 # CURRENT STEP
-PHASE2_UI_INTERACTION_ACCEPTED
+PHASE2_UI_INTERACTION_ACCEPTED_AND_PORT_SWAP_VERIFIED
 
 # NEXT EXACT STEP
 WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # COMPLETED STEPS
+- OPS-PORT-SWAP-20260825: External validation passed for business `http://10.1.2.1/` (200), Moodle `http://10.1.2.1/moodle/` (200), Dify setup `http://10.1.2.1:443/console/api/setup` (200, finished), and Dify administrator login (200 with authentication cookies). Backup: `/data/haizhi-product-hub/backups/20260825-215842-business80-dify443`; retired rollback container: `haizhi-dify-port80-retired-20260825-223319`.
 - UI-POLISH-D7: Created final report/evidence directory `artifacts/phase2-ui-final-polish-20260825-094950`, verified 28 screenshots and required reports, and packaged `phase2-ui-final-polish-20260825-094950.zip` with SHA-256 `8eb35e2c4ce784855fe6a3fa96d32e7092ac4312ea7bd4b137bab11fe377b8d2`.
 - UI-POLISH-D4: Browser-tested the candidate home knowledge portal and structured AI answer, three-step project requirement analysis/recommendation, project lifecycle and tabs, three-column BOM editor, row Drawer/manual-edit tag, immutable V1/V2/V3 history, ERROR then corrected PASS validation, large Excel effect preview/generation, six-step template mapping, document upload form/large preview, and four responsive viewports. Required screenshots are under `artifacts/phase2-ui-final-polish-20260825-094950/screenshots`.
 - UI-POLISH-D4-REGRESSION: Six-center list/detail routes passed 12/12 at 1440x900 with no page error or horizontal overflow. Candidate console regression recorded zero errors and zero warnings.
@@ -342,7 +343,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - No application-blocking code, migration, import, runtime, or API errors remain.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
-- Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
+- Public port 443 now serves Dify over plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
 - Corrected Dify's stale Celery broker password to the URL-encoded active Redis password, refreshed the affected services and Nginx upstream resolution, and added governed real-dataset retrieval plus deterministic document-content fallback to AI Q&A.
@@ -370,7 +371,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # SERVICES
 - Legacy Python 2.7/SQLite `haizhi-product-center` is stopped and disabled after a complete verified backup; its code and data were not deleted.
-- Formal: FastAPI/Vue/PostgreSQL/Redis/MinIO on port 443; Dify 1.16.1 on ports 80 and 18081; Moodle on port 18082 and `/moodle/`.
+- Formal: FastAPI/Vue/PostgreSQL/Redis/MinIO through the public business gateway on port 80; Dify 1.16.1 on public port 443 and retained direct port 18081; Moodle on port 18082 and business-gateway route `/moodle/`.
 
 # CONTAINERS
 - `haizhi-phase2-style-candidate`: stopped after final style verification; retained only as a non-running diagnostic artifact.
@@ -382,7 +383,8 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - `haizhi-hub-api`: running formal `haizhi-hub-api:6.1.0-ui-polish` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
 - `haizhi-hub-api-v605-uirollback-20260825`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.5-phase2-style-fix`.
 - `haizhi-hub-api-v604-stylerollback-20260824`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.4-phase2-download-fix`.
-- `haizhi-dify-port80`: running as UID/GID `101:101` with read-only root, capability drop `ALL`, `no-new-privileges`, and restart policy `unless-stopped`; proxies public port 80 to the existing Dify Nginx service.
+- `haizhi-dify-port443`: running as UID/GID `101:101` with read-only root, capability drop `ALL`, `no-new-privileges`, hardened `/tmp`, and restart policy `unless-stopped`; proxies public port 443 to the existing Dify Nginx service.
+- `haizhi-dify-port80-retired-20260825-223319`: stopped rollback copy of the former public-port-80 Dify proxy.
 - `haizhi-hub-api-v572-adconfig-rollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.2-ad-config-ui`.
 - `haizhi-hub-api-v571-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.1-ad-approval`.
 - `haizhi-hub-api-v570-adrollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.0-material-admin`.
@@ -391,14 +393,14 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - `haizhi-570-candidate` and `haizhi-570-pg`: stopped after isolated migration/import/RBAC acceptance; retained temporarily as diagnostic evidence.
 - `haizhi-hub-api-v562-inline-rollback-20260823`: stopped retained rollback point on immutable `haizhi-hub-api:5.6.2-inline-edit`.
 - `haizhi-inline-candidate-563`, `haizhi-inline-candidate`, and `haizhi-inline-pg`: stopped after isolated acceptance; retained temporarily as non-running diagnostic records.
-- `haizhi-hub-gateway`: running on host port 443; connected to `haizhi-hub-net` and `haizhi-moodle-net`.
+- `haizhi-hub-gateway`: running on host port 80; connected to `haizhi-hub-net` and `haizhi-moodle-net`.
 - `haizhi-moodle-db`: running and healthy with persistent named volume.
 - `haizhi-moodle`: running after completed Moodle setup, mapped to host port 18082 with persistent application/data volumes.
 - `haizhi-hub-api-v41-20260822-022807`: stopped retained rollback point on immutable `haizhi-hub-api:4.1`; candidate, 4.0, and pre-V3 stopped containers were removed.
 
 # PORTS
-- 80: formal Dify 1.16.1 login/console entry.
-- 443: formal Nginx gateway serving HaiZhi at `/` and Moodle at `/moodle/`; plain HTTP pending domain/certificate.
+- 80: formal Nginx gateway serving HaiZhi at `/` and Moodle at `/moodle/`.
+- 443: formal Dify 1.16.1 login/console entry; plain HTTP pending domain/certificate.
 - 18080: formal FastAPI/static frontend internal/new-service port.
 - 18081: retained direct Dify entry.
 - 18082: Moodle training service.
@@ -438,7 +440,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Formal server deployment is artifact/image-managed at `/opt/haizhi-product-hub`; V3 source and immutable images are deployed.
 
 # DIFY STATUS
-- PASS: Dify 1.16.1 core services are healthy on ports 80 and 18081; setup is finished; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; signature verification is `true`; real document synchronization and retrieval pass against dataset `6b164760-8c9b-4c37-b0f7-96864d88b9c3`.
+- PASS: Dify 1.16.1 core services are healthy on public port 443 and retained direct port 18081; setup is finished; the administrator password was reset through the official Flask CLI and the new credentials returned HTTP 200 with authentication cookies; official OpenAI API Compatible plugin 0.0.62 is installed; protected HaiZhi Qwen3.6-27B model is active; signature verification is `true`; real document synchronization and retrieval pass against dataset `6b164760-8c9b-4c37-b0f7-96864d88b9c3`.
 
 # MOODLE STATUS
 - PASS: persistent Moodle 5.0/MariaDB 11.4 stack, administrator login, representative course id 2, HaiZhi training association APIs, formal `/moodle/` publication, browser login, and authenticated course rendering pass.
