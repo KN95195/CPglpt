@@ -8,15 +8,16 @@ PHASE2_UI_INTERACTION_FINAL_POLISH
 UI productization of the existing real Phase 2 flows: home AI portal, intelligent configuration, project/BOM, Excel mapping/export, and document center.
 
 # LAST SUCCESSFUL STEP
-UI-POLISH-D4: Completed isolated-candidate browser acceptance for the real AI, intelligent-configuration, project/BOM, Excel mapping/export, document-center, permission, responsive and six-center flows with zero serious console messages.
+UI-POLISH-D6: Deployed immutable formal `haizhi-hub-api:6.1.0-ui-polish`, verified exact candidate/formal image identity, production health, Alembic head, hardened runtime, front-end entry, backup/rollback, reports and evidence package.
 
 # CURRENT STEP
-UI_POLISH_D5_COMMIT_AND_FORMAL_CUTOVER
+PHASE2_UI_INTERACTION_ACCEPTED
 
 # NEXT EXACT STEP
-COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
+WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # COMPLETED STEPS
+- UI-POLISH-D7: Created final report/evidence directory `artifacts/phase2-ui-final-polish-20260825-094950`, verified 28 screenshots and required reports, and packaged `phase2-ui-final-polish-20260825-094950.zip` with SHA-256 `8eb35e2c4ce784855fe6a3fa96d32e7092ac4312ea7bd4b137bab11fe377b8d2`.
 - UI-POLISH-D4: Browser-tested the candidate home knowledge portal and structured AI answer, three-step project requirement analysis/recommendation, project lifecycle and tabs, three-column BOM editor, row Drawer/manual-edit tag, immutable V1/V2/V3 history, ERROR then corrected PASS validation, large Excel effect preview/generation, six-step template mapping, document upload form/large preview, and four responsive viewports. Required screenshots are under `artifacts/phase2-ui-final-polish-20260825-094950/screenshots`.
 - UI-POLISH-D4-REGRESSION: Six-center list/detail routes passed 12/12 at 1440x900 with no page error or horizontal overflow. Candidate console regression recorded zero errors and zero warnings.
 - UI-POLISH-D4-PERMISSION: Administrator and sales UI states passed; a no-`PRICE_VIEW`/no-`KNOWLEDGE_MANAGE` account received no product price payload, HTTP 403 on price endpoint, and HTTP 403 on knowledge write.
@@ -185,6 +186,11 @@ COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- UI-POLISH-D6 PASS: formal `haizhi-hub-api:6.1.0-ui-polish` is running with image id `sha256:45dffe7e0d2b4c23d01cf91a13eaa09928bd5d815d15952097818847cdac9bac`, identical to the accepted candidate; 18080 and 443 health returned HTTP 200; Alembic is `c3d4e5f60718 (head)`; frontend entry is `index-D4lSoA8j.js`.
+- UI-POLISH-D4 PASS: required 01-17 screenshots plus four-view responsive evidence exist; AI Q&A, structured requirement analysis, recommendation, BOM Drawer/manual change/version/validation, Excel mapping/preview/generation, and document upload/preview interactions passed.
+- UI-POLISH-D4 PASS: responsive scan at 1920x1080, 1600x900, 1440x900 and 1366x768 found no page-level horizontal overflow on home or BOM; 1366 document and Excel pages passed.
+- UI-POLISH-D4 PASS: six-center list/detail browser regression is 12/12 with zero page errors, zero console errors and zero console warnings.
+- UI-POLISH-D4 PASS: no-PRICE_VIEW/no-KNOWLEDGE_MANAGE account received no product price payload and HTTP 403 from price and knowledge-write endpoints.
 - `PHASE2_FINAL_ZIP_VERIFY_PASS`: 80 ZIP entries; required Word report, Excel sample, and package manifest present; SHA-256 matched the companion checksum file.
 - `PHASE2_REPORT_STRUCTURE_QA_PASS`: 9/9 required Markdown reports exist; Word report contains 71 paragraphs, 16 tables, 8 evidence figures, and 1 section.
 - `PHASE2_WORD_RENDER_QA_PASS 19/19`: every final report page visually inspected at original resolution with no clipping, overlap, broken table, missing glyph, or footer/header defect.
@@ -335,7 +341,7 @@ COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
-- Live AD synchronization cannot complete until Login Domain is corrected to `hilaicloud.com` and the domain administrator confirms the `ldapreader@hilaicloud.com` password/account is enabled, unlocked, and not expired.
+- AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
 - Port 443 still serves plain HTTP; a domain and trusted certificate have not been supplied.
 
 # FIXES APPLIED
@@ -373,7 +379,8 @@ COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running `haizhi-hub-api:6.0.5-phase2-style-fix` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api`: running formal `haizhi-hub-api:6.1.0-ui-polish` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
+- `haizhi-hub-api-v605-uirollback-20260825`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.5-phase2-style-fix`.
 - `haizhi-hub-api-v604-stylerollback-20260824`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.4-phase2-download-fix`.
 - `haizhi-dify-port80`: running as UID/GID `101:101` with read-only root, capability drop `ALL`, `no-new-privileges`, and restart policy `unless-stopped`; proxies public port 80 to the existing Dify Nginx service.
 - `haizhi-hub-api-v572-adconfig-rollback-20260823`: stopped immediate rollback point on immutable `haizhi-hub-api:5.7.2-ad-config-ui`.
@@ -402,14 +409,16 @@ COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 - Isolated candidate schema is at Alembic revision `c3d4e5f60718`; upgrade/downgrade/re-upgrade passed after the Phase 2 role-binding change.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: immutable `haizhi-hub-api:6.0.5-phase2-style-fix` (frontend bundle `index-B6daGaE-.js`, stylesheet `index-Br7JOFwG.css` with corrected `data-v-fb4feb6a` scope).
+- Formal backend/frontend deployed: immutable `haizhi-hub-api:6.1.0-ui-polish` (frontend bundle `index-D4lSoA8j.js`, stylesheet `index-DlnbK5He.css`).
+- Formal and accepted candidate share image id `sha256:45dffe7e0d2b4c23d01cf91a13eaa09928bd5d815d15952097818847cdac9bac`.
 - Candidate runtime: `haizhi-hub-api:6.0.0-phase2-excel-ui` on localhost port 18089; exact candidate frontend entry is `index-Da_32jig.js` and includes real Dify synchronization/retrieval, derived document previews, and visual Excel mapping/export.
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
-- Local project is a Git worktree on `codex/phase2-business-implementation`.
+- Local project is a Git worktree on `codex/phase2-ui-final-polish`.
 
 # GIT STATE
 - Server formal root: `NOT_A_GIT_WORKTREE`; branch and commit are not applicable.
-- Local project branch: `codex/phase2-business-implementation`.
+- Local project branch: `codex/phase2-ui-final-polish`.
+- Phase 2 UI productization implementation commit: `9fbf92c` (`feat: productize phase 2 user workflows`).
 - Phase 2 implementation commit: `1c91a3a70ff8e48da710875e2f7c517634e89d2a` (`feat: deliver phase 2 business workflows`).
 - LDAP error sanitization, frontend response fallback, login-domain validation, and 5.7.3 deployment checkpoint commit: `fbbe6eb` (`fix: sanitize LDAP errors and validate login domain`).
 - AD manual configuration implementation and deployment checkpoint commit: `c125f4c` (`feat: add manual AD directory configuration`).
@@ -441,8 +450,7 @@ COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
-- AD live authenticated testing and user enumeration require the domain administrator to verify the rejected `ldapreader@hilaicloud.com` password/account state. `10.1.1.102`, ports 389/636, RootDSE, `hilaicloud.com`, and `OU=浙江海莱云智科技有限公司,DC=hilaicloud,DC=com` are verified; AD subcode `52e` confirms the connection reached AD but the supplied credentials were not accepted.
-- Production HTTPS remains an external launch dependency because no public domain/certificate has been provided; current formal review entry uses HTTP on port 443.
+- None for Phase 2 UI & Interaction acceptance. Production trusted HTTPS remains a known infrastructure limitation because no domain/certificate has been provided; current entry is plain HTTP on port 443.
 
 # DO NOT REPEAT
 - Do not regenerate or recompress the final package unless a delivered report/evidence file changes. Verified ZIP SHA-256 is `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
@@ -491,3 +499,12 @@ PASS: Dify application, AI Gateway/LLM governance, deterministic Embedding/RAG, 
 
 # GATE D
 PASS: RBAC, price audit, source/asset secret scan, authentication controls, security headers, network isolation, least-privilege API runtime, backup/restore, and controlled upgrade/rollback acceptance pass.
+
+# FINAL UI GATES
+- FUNCTIONAL GATE: PASS.
+- UI GATE: PASS.
+- INTERACTION GATE: PASS.
+- PERMISSION GATE: PASS.
+- RESPONSIVE GATE: PASS.
+- REGRESSION GATE: PASS.
+- FINAL STATUS: `PHASE 2 UI & INTERACTION ACCEPTED`.
