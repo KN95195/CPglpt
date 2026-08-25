@@ -1,22 +1,29 @@
 # FINAL OBJECTIVE
-Complete `PHASE 2 BUSINESS IMPLEMENTATION` for 海智产品中心: AI knowledge Q&A, intelligent configuration, project BOM, Excel template mapping/export, document center, Dify/RAG, production deployment, full acceptance, backup/rollback, and final reports. End only as `PHASE 2 BUSINESS IMPLEMENTATION READY` or `PHASE 2 BUSINESS IMPLEMENTATION NOT READY` with exact external blockers recorded.
+Complete `PHASE 2 UI & INTERACTION FINAL POLISH` for 海智产品中心 without changing passed business semantics, backend models, six-center information architecture, LDAP, or Dify. End only as `PHASE 2 UI & INTERACTION ACCEPTED` or `PHASE 2 UI & INTERACTION NOT READY` after all six final gates are evaluated.
 
 # CURRENT PHASE
-PHASE2_BUSINESS_IMPLEMENTATION
+PHASE2_UI_INTERACTION_FINAL_POLISH
 
 # CURRENT BUSINESS LOOP
-All executable Phase 2 implementation, candidate acceptance, production cutover, browser regression, backup/rollback, report generation, evidence cleanup, and package verification are complete. Final status is NOT READY only because live AD bind still returns external `52e invalidCredentials`; trusted HTTPS also awaits an external domain and certificate.
+UI productization of the existing real Phase 2 flows: home AI portal, intelligent configuration, project/BOM, Excel mapping/export, and document center.
 
 # LAST SUCCESSFUL STEP
-PHASE2-IMPL-012: Generated all nine Markdown reports and the formal Word acceptance report, visually verified all 19 rendered pages, replaced the invalid document-center screenshot with fresh formal evidence, disabled temporary acceptance user id 15, stopped the temporary style candidate, and prepared the final NOT READY package state.
+UI-POLISH-D4: Completed isolated-candidate browser acceptance for the real AI, intelligent-configuration, project/BOM, Excel mapping/export, document-center, permission, responsive and six-center flows with zero serious console messages.
 
 # CURRENT STEP
-PHASE2_BUSINESS_IMPLEMENTATION_NOT_READY_FINAL
+UI_POLISH_D5_COMMIT_AND_FORMAL_CUTOVER
 
 # NEXT EXACT STEP
-WAITING_FOR_EXTERNAL_AD_CREDENTIAL_CORRECTION_AND_TRUSTED_TLS_INPUT
+COMMIT_VERIFIED_UI_SOURCE_TAG_IMMUTABLE_FORMAL_IMAGE_AND_CUT_OVER_WITH_ROLLBACK
 
 # COMPLETED STEPS
+- UI-POLISH-D4: Browser-tested the candidate home knowledge portal and structured AI answer, three-step project requirement analysis/recommendation, project lifecycle and tabs, three-column BOM editor, row Drawer/manual-edit tag, immutable V1/V2/V3 history, ERROR then corrected PASS validation, large Excel effect preview/generation, six-step template mapping, document upload form/large preview, and four responsive viewports. Required screenshots are under `artifacts/phase2-ui-final-polish-20260825-094950/screenshots`.
+- UI-POLISH-D4-REGRESSION: Six-center list/detail routes passed 12/12 at 1440x900 with no page error or horizontal overflow. Candidate console regression recorded zero errors and zero warnings.
+- UI-POLISH-D4-PERMISSION: Administrator and sales UI states passed; a no-`PRICE_VIEW`/no-`KNOWLEDGE_MANAGE` account received no product price payload, HTTP 403 on price endpoint, and HTTP 403 on knowledge write.
+- UI-POLISH-D3: Deployed immutable isolated candidate `haizhi-hub-api:6.1.0-ui-polish-candidate-final` against isolated PostgreSQL at Alembic `c3d4e5f60718`; candidate health passed through the local acceptance proxy without formal cutover.
+- UI-POLISH-D2: Created production UI pre-deployment backup `/data/haizhi-product-hub/backups/20260824-ui-polish-predeploy` and preserved the formal `6.0.5` runtime unchanged during candidate acceptance.
+- UI-POLISH-D1: Productized the real home AI portal, structured AI answer sources, three-step intelligent configuration, project header/lifecycle/tabs, three-column BOM editor with Drawer/manual-diff/ordering, detailed validation/override UI, six-step visual Excel mapping, large export preview, and document center list/upload/in-page preview while preserving APIs, permissions, immutable BOM versions, price isolation, and Dify/LDAP scope.
+- UI-POLISH-D1-BUILD: `npm run build` PASS; generated `index-D4lSoA8j.js` and `index-DlnbK5He.css`.
 - PHASE2-IMPL-012B: Packaged `phase2-business-implementation-20260824-final.zip` with 80 entries, verified required Word/XLSX/manifest entries, excluded generated dependency caches, and verified SHA-256 `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
 - PHASE2-IMPL-012: Created 9/9 required Markdown reports and `海智产品中心_Phase2业务实施验收报告.docx`; exported the report to PDF, rasterized and visually inspected all 19 pages, fixed oversized image scaling, replaced the malformed document-center screenshot from the live 6.0.5 page, disabled the exact temporary acceptance account id 15 after physical deletion was correctly prevented by retained audit references, stopped `haizhi-phase2-style-candidate`, and reset browser viewport state.
 - PHASE2-IMPL-011J: Built candidate `6.0.5`, passed candidate health/security/style checks, retained stopped rollback container `haizhi-hub-api-v604-stylerollback-20260824`, and deployed the same immutable image with UID/GID `10001:10001`, read-only root, capability drop `ALL`, `no-new-privileges`, and noexec/nosuid `/tmp`. Formal direct and 443 health, CSS scope, and Alembic `c3d4e5f60718` passed.
