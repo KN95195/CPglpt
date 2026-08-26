@@ -342,10 +342,11 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
-- MATERIAL-IMPORT-BLOCKER: Resolved. The operator has uploaded the source workbook and `核心产品标准化材料-260818同步.rar` into `/opt/haizhi-product-hub` on the formal server (visible in the server file manager). No production document deletion or catalog mutation has been attempted.
+- MATERIAL-IMPORT-BLOCKER: Source workbook and `核心产品标准化材料-260818同步.rar` are uploaded under `/opt/haizhi-product-hub` (confirmed in the server file manager). The first backup command stopped before any mutation because the guessed PostgreSQL role `haizhi` does not exist; the terminal websocket then disconnected. No production document deletion or catalog mutation has been attempted.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
 - Public port 443 now serves Dify over plain HTTP; a domain and trusted certificate have not been supplied.
+- Material import is paused at preflight: determine the actual PostgreSQL role/database from the server container environment, then rerun backup and continue with the staged dry-run.
 
 # FIXES APPLIED
 - Corrected Dify's stale Celery broker password to the URL-encoded active Redis password, refreshed the affected services and Nginx upstream resolution, and added governed real-dataset retrieval plus deterministic document-content fallback to AI Q&A.
