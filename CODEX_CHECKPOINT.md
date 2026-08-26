@@ -17,6 +17,7 @@ PHASE2_UI_INTERACTION_ACCEPTED_AND_PORT_SWAP_VERIFIED
 WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # COMPLETED STEPS
+- MATERIAL-ANALYSIS-20260826: Received and extracted `核心产品标准化材料-260818同步.rar` to local staging `D:\haizhi-materials-260818` (25 files: product brochures/specifications, pricing workbooks, tender parameter sheets, PPT/DOCX collateral, certificates, and scene/platform brochures). Cross-checked against the supplied configuration workbook: source groups are 岸海船舶检测终端 (HB-PD12S25, HB-SD23S35, HB-SD50S30, HS-RAB32), 海智AI分析终端 (HS-FCS157J1, HS-GCS020A1), 蓬莱智算一体机 (HS-PL8ZTG3 variants), five software/application products, four licensed algorithms, five scenes, and two model capability metric sets. Existing idempotent importer `backend/app/material_import.py` and `official_material_2026.json` cover the structured catalog; binary documents still require transfer to the server before upload and association.
 - OPS-PORT-SWAP-20260825: External validation passed for business `http://10.1.2.1/` (200), Moodle `http://10.1.2.1/moodle/` (200), Dify setup `http://10.1.2.1:443/console/api/setup` (200, finished), and Dify administrator login (200 with authentication cookies). Backup: `/data/haizhi-product-hub/backups/20260825-215842-business80-dify443`; retired rollback container: `haizhi-dify-port80-retired-20260825-223319`.
 - UI-POLISH-D7: Created final report/evidence directory `artifacts/phase2-ui-final-polish-20260825-094950`, verified 28 screenshots and required reports, and packaged `phase2-ui-final-polish-20260825-094950.zip` with SHA-256 `8eb35e2c4ce784855fe6a3fa96d32e7092ac4312ea7bd4b137bab11fe377b8d2`.
 - UI-POLISH-D4: Browser-tested the candidate home knowledge portal and structured AI answer, three-step project requirement analysis/recommendation, project lifecycle and tabs, three-column BOM editor, row Drawer/manual-edit tag, immutable V1/V2/V3 history, ERROR then corrected PASS validation, large Excel effect preview/generation, six-step template mapping, document upload form/large preview, and four responsive viewports. Required screenshots are under `artifacts/phase2-ui-final-polish-20260825-094950/screenshots`.
@@ -341,6 +342,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
+- MATERIAL-IMPORT-BLOCKER: The new 25-file collateral set exists on the operator workstation only. The server has no access to `D:\haizhi-materials-260818`, and the browser terminal control bridge is unavailable for automated transfer/execution. No production document deletion or catalog mutation has been attempted.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
 - Public port 443 now serves Dify over plain HTTP; a domain and trusted certificate have not been supplied.
@@ -453,6 +455,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # EXTERNAL BLOCKERS
 - None for Phase 2 UI & Interaction acceptance. Production trusted HTTPS remains a known infrastructure limitation because no domain/certificate has been provided; current entry is plain HTTP on port 443.
+- The requested collateral upload/cleanup cannot be safely completed until the extracted material directory or archive is transferred to `/opt/haizhi-product-hub/import/` (or another server path) and a server terminal command can be executed. Structured catalog import remains idempotent and ready.
 
 # DO NOT REPEAT
 - Do not regenerate or recompress the final package unless a delivered report/evidence file changes. Verified ZIP SHA-256 is `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
