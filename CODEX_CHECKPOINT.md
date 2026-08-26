@@ -342,7 +342,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # CURRENT ERRORS
 - No application-blocking code, migration, import, runtime, or API errors remain.
-- MATERIAL-IMPORT-BLOCKER: The new 25-file collateral set exists on the operator workstation only. The server has no access to `D:\haizhi-materials-260818`, and the browser terminal control bridge is unavailable for automated transfer/execution. No production document deletion or catalog mutation has been attempted.
+- MATERIAL-IMPORT-BLOCKER: Resolved. The operator has uploaded the source workbook and `核心产品标准化材料-260818同步.rar` into `/opt/haizhi-product-hub` on the formal server (visible in the server file manager). No production document deletion or catalog mutation has been attempted.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
 - Public port 443 now serves Dify over plain HTTP; a domain and trusted certificate have not been supplied.
@@ -455,7 +455,7 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 
 # EXTERNAL BLOCKERS
 - None for Phase 2 UI & Interaction acceptance. Production trusted HTTPS remains a known infrastructure limitation because no domain/certificate has been provided; current entry is plain HTTP on port 443.
-- The requested collateral upload/cleanup cannot be safely completed until the extracted material directory or archive is transferred to `/opt/haizhi-product-hub/import/` (or another server path) and a server terminal command can be executed. Structured catalog import remains idempotent and ready.
+- The requested collateral import/cleanup is ready to resume from the server-side files. Before mutation, create a timestamped PostgreSQL/MinIO backup, extract the archive to an import staging directory, run a dry-run inventory, then apply only exact material-backed upserts and archive unrelated records rather than deleting without an auditable match.
 
 # DO NOT REPEAT
 - Do not regenerate or recompress the final package unless a delivered report/evidence file changes. Verified ZIP SHA-256 is `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
