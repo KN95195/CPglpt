@@ -11,13 +11,11 @@
       {"model":"HS-FCS157J1","material":"367001214","unit":"台","agent":21000,"sale":28000,"status":"FEATURED","spec":{"AI算力":"157 TOPS"}},
       {"model":"HS-GCS020A1","material":"367001215","unit":"台","agent":12000,"sale":16000,"status":"ACTIVE","spec":{"AI算力":"20 TOPS"}}
     ]},
-    {"name":"蓬莱多维智算服务器","series":"蓬莱智算","summary":"面向多路视频、航迹融合和多模态模型的中心级训练、推理与算法编排服务器。","category":"中心服务器","scenes":["船舶通航管控","三无船舶管理","港口安全管理","桥梁限高防撞","海陆缉私管控"],"variants":[
+    {"name":"蓬莱智算一体机","series":"蓬莱智算","summary":"面向多路视频、航迹融合和多模态模型的中心级训练、推理与算法编排一体机。","category":"中心服务器","scenes":["船舶通航管控","三无船舶管理","港口安全管理","桥梁限高防撞","海陆缉私管控"],"variants":[
       {"model":"HS-PL8ZTG3","material":"367001204","unit":"台","agent":320000,"sale":360000,"status":"FEATURED","spec":{"配置":"标准GPU版"}},
       {"model":"HS-PL8ZTG3-4GPU","material":"367001205","unit":"台","agent":238000,"sale":270000,"status":"ACTIVE","spec":{"配置":"4GPU版"}},
       {"model":"HS-PL8ZTG3-NOGPU","material":"367001206","unit":"台","agent":151000,"sale":176000,"status":"ACTIVE","spec":{"配置":"不带加速卡"}},
-      {"model":"HS-PL8ZTG3-TRAIN","material":"","unit":"台","agent":750000,"sale":900000,"status":"FEATURED","spec":{"配置":"训推一体版"}},
-      {"model":"海康库存服务器-A","material":"","unit":"台","agent":null,"sale":null,"status":"INVENTORY","spec":{"说明":"非主推库存机型"}},
-      {"model":"海康库存服务器-B","material":"","unit":"台","agent":null,"sale":null,"status":"INVENTORY","spec":{"说明":"非主推库存机型"}}
+      {"model":"HS-PL8ZTG3-TRAIN","material":"","unit":"台","agent":750000,"sale":900000,"status":"FEATURED","spec":{"配置":"训推一体版"}}
     ]}
   ],
   "software": [

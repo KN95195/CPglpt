@@ -103,12 +103,16 @@ def main():
         assert document["productId"] == products[0]["id"]
         assert document["sceneId"] == scenes[0]["id"]
         assert document["tenderId"] == tender_id
+        status, published = call(f"/api/documents/{document_id}/publish", admin, "POST")
+        assert status == 200 and published["status"] == "PUBLISHED", (status, published)
         status, rows = call("/api/documents", sales)
         assert status == 200 and any(row["id"] == document_id for row in rows)
         status, headers, downloaded = download(document_id, sales)
+        assert status == 403
+        status, headers, downloaded = download(document_id, admin)
         assert status == 200 and downloaded == content
         assert "attachment" in headers.get("Content-Disposition", "")
-        checks += ["document_associations", "sales_list_download"]
+        checks += ["document_associations", "reader_download_denied", "manager_download"]
 
         assert multipart("/api/documents", price_admin, {}, "denied.txt", b"denied")[0] == 403
         assert call(f"/api/documents/{document_id}", price_admin, "DELETE")[0] == 403

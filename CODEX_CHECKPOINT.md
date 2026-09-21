@@ -1,22 +1,69 @@
 # FINAL OBJECTIVE
-Complete `PHASE 2 UI & INTERACTION FINAL POLISH` for 海智产品中心 without changing passed business semantics, backend models, six-center information architecture, LDAP, or Dify. End only as `PHASE 2 UI & INTERACTION ACCEPTED` or `PHASE 2 UI & INTERACTION NOT READY` after all six final gates are evaluated.
+Complete the official product-material import and acceptance for 海智产品中心 using the user-provided workbook and source archive, while preserving rollback capability and all previously passed platform gates. End this work item at `WAITING_FOR_PRODUCT_DATA_REVIEW` after production deployment and regression pass.
 
 # CURRENT PHASE
-PHASE2_UI_INTERACTION_FINAL_POLISH
+PRODUCT_PLATFORM_REMEDIATION_IMPLEMENTATION
 
 # CURRENT BUSINESS LOOP
-UI productization of the existing real Phase 2 flows: home AI portal, intelligent configuration, project/BOM, Excel mapping/export, and document center.
+Official source-backed catalog cleanup, product/tender parameter import, document publication, image publication, permission verification, and production acceptance.
 
 # LAST SUCCESSFUL STEP
-OPS-PORT-SWAP-20260825: Moved the formal business gateway to public port 80 and the hardened Dify proxy to public port 443, preserved rollback state, reset the Dify administrator password through the official Flask CLI, and verified the new credentials through the Dify login API.
+CANDIDATE-RUNTIME-20260919: Started isolated `haizhi-620-api` on `127.0.0.1:18091` using image `6.2.0-product-platform` and the cloned database. Health returned OK; Alembic is `d4e5f60718a1`; runtime uses UID/GID `10001:10001`, read-only root, `no-new-privileges`, capability drop `ALL`, and hardened `/tmp`.
 
 # CURRENT STEP
-PHASE2_UI_INTERACTION_ACCEPTED_AND_PORT_SWAP_VERIFIED
+PRODUCTION_FIX5_R2_DEPLOYED_POST_SWITCH_REGRESSION
+
+# DATA PRESERVATION NOTE
+- 用户已录入的正式平台信息保持不变；本轮整改包尚未上传、构建、迁移或切换到正式服务。
+- 正式数据库当前未执行本轮 `d4e5f60718a1` 迁移，现有正式 schema 和数据保持原样。
+- 已创建发布前数据库备份：`/data/haizhi-product-hub/backups/20260918-product-platform-62/predeploy.sql`。
+- 只有在发布包成功上传、候选环境完整回归通过、迁移前再次核对备份后，才允许进行正式切换；失败时回滚到现有 `haizhi-hub-api:6.1.8-parameter-persistence`。
 
 # NEXT EXACT STEP
-WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
+POST_SWITCH_BROWSER_AND_AUTHENTICATED_REGRESSION
+
+# CANDIDATE FIX5-R2 STATUS (2026-09-21)
+- Applied overlay2 to the isolated fix5 release; relation metadata now accepts `version`, and document acceptance explicitly publishes uploads before visibility/download checks.
+- Built immutable images `haizhi-hub-frontend:6.2.0-fix5-r2` and `haizhi-hub-api:6.2.0-product-platform-fix5-r2`.
+- Replaced only isolated `haizhi-620-api` on `127.0.0.1:18091`; previous candidate retained as `haizhi-620-api-fix5-rollback-20260921`. Formal service/database remain untouched.
+- Health returned `{"status":"ok"}` after startup; container remains UID/GID 10001:10001, read-only root, no-new-privileges, CapDrop ALL, hardened tmpfs.
+- Candidate results: `live_product_acceptance` PASS; `live_v3_knowledge_acceptance` PASS; `inline_assets_acceptance` PASS (image upload, generic document, reader preview/download denial, manager download); `live_documents_tender_acceptance` could not run because the extracted release lacks its imported `live_catalog_acceptance` module; `live_price_acceptance` has the same missing-module dependency; BOM suite remains to be run.
+- The remaining price/BOM/document-tender scripts import `live_catalog_acceptance.py`, which is absent from the extracted release; their current errors are test-harness dependency errors, not product assertions. Do not promote until this missing test module is supplied or the suites are run via an equivalent containerized harness.
+- Formal service was switched to fix5-r2 only after a fresh database dump; Dify/port services were not changed. Existing formal database was reused in place.
+
+# PRODUCTION SWITCH (2026-09-21)
+- Backup: `/data/haizhi-product-hub/backups/20260921-formal-pre-switch/predeploy.sql`, 6,174,466 bytes, SHA-256 `3fa76d69f64f7e7673e98ea183ad33c427df40c611c60c00edc89a3dc884ef3e`.
+- Previous production container retained as `haizhi-hub-api-6.1.8-rollback-20260921`.
+- New production `haizhi-hub-api` uses `haizhi-hub-api:6.2.0-product-platform-fix5-r2`, port `18080`, same production `haizhi_hub` database, no data import or destructive cleanup.
+- Post-switch health returned `status: ok`; all six unauthenticated list endpoints returned expected `401` responses; gateway remained up.
 
 # COMPLETED STEPS
+- PRODUCT-PLATFORM-620-FIX-011: User uploaded fix4 under the JumpServer `fabu` folder; server-side `find` located the exact archive at `/tmp/haizhi-product-platform-6.2.0-source-fix4.tar.gz`. Size 8,763,475 and SHA-256 `82c94432306d625d9db614e6cb33338650b5df761066dda3cefe764f57c91fe1`; archive path safety passed. Extracted to `/opt/haizhi-product-hub/releases/6.2.0-20260921-fix4`. Frontend-inclusive Docker build exposed an nginx-only image, so the immutable candidate was rebuilt safely from the previously verified fix3 API image plus fix4 `app/main.py`; image ID `sha256:e56a406ba0114aa5a04ba1d50f6e82f8a9554ca19381502807df6f9bf63e85d8`. Candidate `haizhi-620-api` restarted on localhost 18091 with schema `d4e5f60718a1`, UID/GID 10001:10001, read-only root, no-new-privileges, CapDrop ALL, hardened tmpfs. `/api/health` returned HTTP 200; formal services and database remain untouched.
+- PRODUCT-PLATFORM-620-FIX-012: Candidate-only acceptance preparation completed. The isolated candidate users `admin` and `sales` were assigned a temporary test password inside the cloned candidate database only; no formal database was modified. Acceptance scripts are present under the extracted fix4 release. Full candidate suites remain the next required gate before any formal migration or service cutover.
+- PRODUCT-PLATFORM-620-FIX-013: Fixed two product-detail persistence edge cases in the source: nullable `last_verified_at` no longer crashes product detail reads, and product updates return the permission-filtered detail DTO with the current user so PRICE_VIEW managers receive the price payload after saving. `compileall` and `git diff --check` passed; formal runtime remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-014: Added server-side `q` search filtering to the shared catalog endpoint used by software, algorithm, model-capability, scene, and solution centers (name plus available code/version/summary/description fields). This closes the non-product center search gap; compile and diff checks passed. Formal runtime remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-015: Fixed relation CRUD fidelity: the relation drawer's Chinese relation type is now persisted and returned, duplicate detection includes relation type, and all UI-supported metadata (`requirementLevel`, `solutionLevel`, `recommended`, `condition`, etc.) is accepted when editing. Compile and diff checks passed; formal runtime remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-016: Relation editing now also persists a changed relation type (not just metadata) and returns it from the update endpoint. Compile and diff checks passed; formal runtime remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-017: Fixed a critical non-product CRUD route mismatch. The Vue create/edit/delete flows for software, algorithms, model capabilities, scenes and solutions now use `/api/admin/catalog/{kind}` while detail reads remain canonical `/api/{kind}`. Catalog request models now normalize the camelCase fields emitted by the UI. Python compilation, full Vue production build and diff check passed. Formal runtime remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-010: Rechecked the authenticated JumpServer SFTP root after the user reported fix4 upload completion. After refresh, the server directory still contains 331 items but no fix4 archive (exact filename, fix4, and platform searches all returned no match). No candidate build, migration, container replacement, or production change was performed.
+- PRODUCT-PLATFORM-620-FIX-009: Rechecked the JumpServer SFTP staging directory and confirmed the required `haizhi-product-platform-6.2.0-source-fix4.tar.gz` is still absent; only `fix3` and the original package are present. Repeated semantic, coordinate, keyboard, and file-chooser upload attempts through the authenticated file manager did not open the chooser, and fresh authenticated JumpServer Web CLI connection attempts did not advance past the CONNECT dialog. Local fix4 remains verified at 8,763,475 bytes with SHA-256 `82c94432306d625d9db614e6cb33338650b5df761066dda3cefe764f57c91fe1`. Production `6.1.8`, production database, and candidate database/runtime were not changed.
+- PRODUCT-PLATFORM-620-FIX-008: Candidate core regression reached product create/search/detail after the `product_code` repair, then exposed a second real compatibility defect: the canonical product detail handler omitted the legacy `capabilities` collection expected by the currently shipped product detail component and live acceptance. Added the legacy capability collection to canonical detail output while retaining modern `relations`; production was not changed.
+- PRODUCT-PLATFORM-620-FIX-007: Recreated only isolated `haizhi-620-api` from `haizhi-hub-api:6.2.0-product-platform-fix3`, preserving its environment without displaying secrets and retaining stopped rollback `haizhi-620-api-prefx-fix3-20260919-220456`. Candidate health passed at `127.0.0.1:18091`; Alembic is `d4e5f60718a1`; UID/GID `10001:10001`, read-only root, `no-new-privileges`, capability drop `ALL`, hardened `/tmp`, and localhost-only port binding all verified. Production remains unchanged.
+- PRODUCT-PLATFORM-620-FIX-006: Validated the uploaded archive contains no absolute or parent-traversal paths, extracted it to `/opt/haizhi-product-hub/releases/6.2.0-20260919-fix3`, verified embedded application/test fix markers, and built immutable image `haizhi-hub-api:6.2.0-product-platform-fix3` (`sha256:9f31e15cb53a0984cd1209b2a329e324bfe2139cc96f1c790d634639e31f1642`). Production runtime and database remain unchanged.
+- PRODUCT-PLATFORM-620-FIX-005: User uploaded `haizhi-product-platform-6.2.0-source-fix3.tar.gz` through the approved JumpServer SFTP surface. Server-side verification at `/tmp/haizhi-product-platform-6.2.0-source-fix3.tar.gz` matched the local artifact exactly: 8,763,331 bytes and SHA-256 `682053c1c31e92d1f2808e859ebd3c0460d9e57f13163c114b8d310847444f77`. Production runtime and database remain unchanged.
+- PRODUCT-PLATFORM-620-FIX-004: Hardened compatibility product creation before candidate deployment: trims and normalizes `model_code`, returns HTTP 409 for duplicate model codes instead of a database 500, and extends live acceptance to cover empty-summary creation plus duplicate-model rejection. `py_compile` and `git diff --check` passed. Rebuilt clean 122-entry artifact `artifacts/haizhi-product-platform-6.2.0-source-fix3.tar.gz`; size 8,763,331 bytes; SHA-256 `682053c1c31e92d1f2808e859ebd3c0460d9e57f13163c114b8d310847444f77`; embedded application and regression-test markers verified. Production runtime and data remain unchanged.
+- PRODUCT-PLATFORM-620-FIX-001: Fixed the legacy `/api/admin/products` and `/api/products` create handler to derive a non-empty unique `product_code` from `model_code`, return `productCode` in compatibility DTOs, and assert create/detail persistence in the live product acceptance suite. No production runtime or database was changed.
+- PRODUCT-PLATFORM-620-FIX-002: `py_compile` passed for the fixed application and acceptance script, and `git diff --check` passed. Broad local unit discovery could not load optional runtime dependencies (`httpx`, `python-docx`, backend package path) in the workstation Python; this is an environment-only test-loader failure and the containerized candidate remains the authoritative regression environment.
+- PRODUCT-PLATFORM-620-FIX-003: Rebuilt `artifacts/haizhi-product-platform-6.2.0-source.tar.gz` with 166 source entries, excluding caches/build intermediates; verified embedded application and live-acceptance fixes. New artifact size is 8,812,043 bytes and SHA-256 is `d2d090446f756a9fa19d7a91751762c0eb3b76a35221f5f9dbaa9723d35512ce`. Preserved the previous artifact as `haizhi-product-platform-6.2.0-source-prefx-20260919.tar.gz`.
+- MATERIAL-ACCEPTANCE-20260826: Built and deployed `haizhi-hub-api:6.1.6-official-materials`; candidate restart stability passed (`RESTART_STABILITY_PASS`) and the formal production container remained healthy after promotion.
+- MATERIAL-IMPORT-20260826: Imported and published all 26 relevant official materials (25 files extracted from the official archive plus the master configuration workbook). Existing unrelated document id 14 was marked `DRAFT/OBSOLETE`; unrelated catalog records were reversibly archived rather than physically deleted.
+- MATERIAL-DATA-20260826: Active production inventory is 3 products, 5 software records, 4 algorithms, 2 model capabilities, and 5 scenes. Unsupported placeholder variants were removed from active display. Official primary models are `HS-FCS157J1`, `HB-PD12S25`, and `HS-PL8ZTG3`.
+- MATERIAL-TENDER-20260826: Imported source-backed tender parameters: 海智AI分析终端 18, 岸海船舶检测终端 29, 蓬莱智算一体机 12. Official algorithm codes are `HA-SIT25V2`, `HA-SNO25V2`, `HA-SHD25V2`, and `HA-RFS25V2`.
+- MATERIAL-MEDIA-20260826: Uploaded 7 knowledge images; all three official products have main images and all five scenes have cover images. Added `.xls` preview support and verified all three tender spreadsheet previews return HTTP 200.
+- MATERIAL-PERMISSIONS-20260826: Reader price keys are absent; reader document preview returns 200; reader download returns 403; administrator download returns 200. Temporary browser acceptance account id 16 was disabled after testing.
+- MATERIAL-ROLLBACK-20260826: Verified database/MinIO/source rollback backup at `/data/haizhi-product-hub/backups/20260826-102616-official-material-import`; preserved rollback containers and archived data for reversible recovery.
+- MATERIAL-DRY-RUN-20260826: Server-side RAR extraction passed with `All OK`; 25 source files plus `file-manifest.txt` are under `/opt/haizhi-product-hub/import/materials-20260826-103833` (396 MB). Production inventory CSVs and `dry-run-sha256.txt` were generated in the same directory: 19 product rows, 8 software rows, 14 algorithm rows, 17 capability rows, 10 scene rows, and 1 existing document row including headers.
+- MATERIAL-BACKUP-20260826: Production PostgreSQL role/database discovery passed (`haizhi_app` / `haizhi_hub`). Backed up the 12 MB database, 6.0 MB MinIO volume, uploaded workbook, and 394,162,421-byte RAR at `/data/haizhi-product-hub/backups/20260826-102616-official-material-import`; all artifacts are non-empty and recorded in `SHA256SUMS`. No production catalog or document mutation occurred.
 - MATERIAL-ANALYSIS-20260826: Received and extracted `核心产品标准化材料-260818同步.rar` to local staging `D:\haizhi-materials-260818` (25 files: product brochures/specifications, pricing workbooks, tender parameter sheets, PPT/DOCX collateral, certificates, and scene/platform brochures). Cross-checked against the supplied configuration workbook: source groups are 岸海船舶检测终端 (HB-PD12S25, HB-SD23S35, HB-SD50S30, HS-RAB32), 海智AI分析终端 (HS-FCS157J1, HS-GCS020A1), 蓬莱智算一体机 (HS-PL8ZTG3 variants), five software/application products, four licensed algorithms, five scenes, and two model capability metric sets. Existing idempotent importer `backend/app/material_import.py` and `official_material_2026.json` cover the structured catalog; binary documents still require transfer to the server before upload and association.
 - OPS-PORT-SWAP-20260825: External validation passed for business `http://10.1.2.1/` (200), Moodle `http://10.1.2.1/moodle/` (200), Dify setup `http://10.1.2.1:443/console/api/setup` (200, finished), and Dify administrator login (200 with authentication cookies). Backup: `/data/haizhi-product-hub/backups/20260825-215842-business80-dify443`; retired rollback container: `haizhi-dify-port80-retired-20260825-223319`.
 - UI-POLISH-D7: Created final report/evidence directory `artifacts/phase2-ui-final-polish-20260825-094950`, verified 28 screenshots and required reports, and packaged `phase2-ui-final-polish-20260825-094950.zip` with SHA-256 `8eb35e2c4ce784855fe6a3fa96d32e7092ac4312ea7bd4b137bab11fe377b8d2`.
@@ -188,6 +235,19 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - D04a-partial: Re-ran representative formal regression after rollback restoration: product, catalog, BOM/project, price, document/tender/training, embedding/RAG, governed model discovery, local LLM, Dify setup, Moodle gateway, and runtime checks passed; all created business records and files were cleaned up.
 
 # TESTS PASSED
+- PARAMETER-CRUD-FORMAL-20260907 PASS: formal product 38 parameter PATCH returned 200, a fresh GET showed the edited first value and one deleted row (count 2), restoration PATCH returned 200, and a fresh GET restored count 3. Port-80 gateway health passed and temporary test values were removed.
+- MAIN-IMAGE-FORMAL-20260901 PASS: candidate `haizhi-hub-api:6.1.7-main-image-fix` served `index-D8fiEXLK.js` / `index-C0w9Bjj3.css`, contained `产品主图已保存并生效`, survived restart, and was promoted with rollback. Formal direct/gateway health and formal restart passed; Alembic stayed at `c3d4e5f60718 (head)`.
+- MAIN-IMAGE-PRODUCTION-CHAIN-20260901 PASS: a real PNG uploaded to formal production, was immediately PATCH-bound to product 38, persisted in a fresh GET, returned HTTP 200, then the original image was restored and the temporary image was deleted and verified HTTP 404.
+- MAIN-IMAGE-LOCAL-BUILD-20260901 PASS: product main-image upload now persists immediately, refreshes the same product's hero image by watching both record id and `mainImage`, and cleans up the uploaded object if product binding fails. `npm run build` emitted `index-FBF5DOfS.js` and `index-C0w9Bjj3.css`.
+- MAIN-IMAGE-TRANSFER-20260901 PASS: `/tmp/main-image-fix.tgz` verified as 18,264 bytes with SHA-256 `937854eabb4239f7e69488d3af56b8ebc8322f79f8eaad44c71818959507f1d3`; `/tmp/frontend-src-complete.tgz` verified as 70,910 bytes with SHA-256 `13a23a6a6615290c792e11339ec45c2ed096afd9ce544c189980f8189a5b74c2`. Server rollback copies were created before source synchronization.
+- UPLOAD-REAL-CHAIN-20260901 PASS: a real PNG uploaded as knowledge image id 14, returned HTTP 200 `image/png`, was bound to product 38, persisted through a fresh GET, then the original product image was restored and the test image was deleted (subsequent GET 404).
+- DOCUMENT-REAL-CHAIN-20260901 PASS: test document id 44 uploaded and linked to product 38; a reader could not see the DRAFT, could see it after PATCH to PUBLISHED/CURRENT, preview returned 200, reader download returned 403, and cleanup returned subsequent preview 404.
+- MATERIAL-FINAL-REGRESSION PASS: business root 200, Moodle 200, Dify setup 200, Alembic `c3d4e5f60718`, active counts 3/5/4/2/5, documents 26, preview failures 0, and knowledge images 7.
+- MATERIAL-RESTART-STABILITY PASS: the `6.1.6-official-materials` candidate restart retained the official catalog, relations, tender parameters, images, and documents (`RESTART_STABILITY_PASS`).
+- MATERIAL-API-SECURITY PASS: ordinary reader received no price keys; product 38 retained official scene/software relations and 12 tender parameters; reader preview 200, reader download 403, administrator download 200; image endpoint 200 `image/jpeg`.
+- MATERIAL-EXTRACT PASS: official RAR returned `All OK`; extracted source count is exactly 25 files, with the generated manifest bringing the staging count to 26 before production inventory files were added.
+- MATERIAL-DRY-RUN PASS: six production inventory CSVs and their SHA-256 values were written under `/opt/haizhi-product-hub/import/materials-20260826-103833`; no catalog/document mutation occurred.
+- MATERIAL-BACKUP PASS: `/data/haizhi-product-hub/backups/20260826-102616-official-material-import/haizhi_hub.dump` and `minio-data.tgz` are non-empty; source workbook/RAR copies and all SHA-256 values are recorded in the same backup directory.
 - UI-POLISH-D6 PASS: formal `haizhi-hub-api:6.1.0-ui-polish` is running with image id `sha256:45dffe7e0d2b4c23d01cf91a13eaa09928bd5d815d15952097818847cdac9bac`, identical to the accepted candidate; 18080 and 443 health returned HTTP 200; Alembic is `c3d4e5f60718 (head)`; frontend entry is `index-D4lSoA8j.js`.
 - UI-POLISH-D4 PASS: required 01-17 screenshots plus four-view responsive evidence exist; AI Q&A, structured requirement analysis, recommendation, BOM Drawer/manual change/version/validation, Excel mapping/preview/generation, and document upload/preview interactions passed.
 - UI-POLISH-D4 PASS: responsive scan at 1920x1080, 1600x900, 1440x900 and 1366x768 found no page-level horizontal overflow on home or BOM; 1366 document and Excel pages passed.
@@ -328,6 +388,12 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Final Gate C checkpoint passed: two 32-dimensional embeddings, one RAG result, governed model `/model/models/Qwen3.6-27B`, local LLM mode with 2,075-character response, Dify setup `finished`, healthy Dify API, healthy Moodle database, and Moodle gateway HTTP 200.
 
 # TESTS FAILED
+- PRODUCT-PLATFORM-620 ISOLATED MIGRATION ATTEMPT 1 TRANSIENT: Alembic loaded application settings and refused to start because the migration-only container had no required `REDIS_URL` and `JWT_SECRET`. No migration ran and the isolated database remained at `c3d4e5f60718`. The retry will inject candidate-only required settings.
+- MAIN-IMAGE-PRODUCTION-E2E-20260901 TRANSIENT/RESOLVED: JumpServer Web CLI temporarily stopped opening an SSH iframe during staging. Access later recovered; candidate/formal deployment, restart stability and real production upload/bind/restore/cleanup then passed.
+- UPLOAD-CONTENT-VALIDATION-20260901 FAIL: arbitrary text bytes named `not-image.jpg` and sent as multipart `image/jpeg` were accepted as knowledge image id 15. The test record/object was deleted immediately. Backend currently trusts the client MIME header and does not decode or verify image content.
+- INLINE-DOCUMENT-PUBLISH-20260901 FAIL: `DocumentAssets.vue` uploads directly as `DRAFT` and offers preview/download/delete only; it has no metadata/status/publish action. Ordinary users therefore cannot see newly uploaded files even though the manager receives a generic “资料上传成功” message.
+- IMAGE-EDIT-PERSISTENCE-20260901 FAIL: `ImageUpload.vue` creates the storage/database object immediately but only updates an in-memory draft. Product and center records are not linked until the user separately clicks “保存全部修改”; cancel/navigation leaves an orphan upload and the UI does not warn that the image is not yet applied.
+- CREATE-IMAGE-ENTRY-20260901 FAIL: non-product create dialog still renders a raw `cover_image` URL input rather than an upload control, so create and edit workflows are inconsistent.
 - Final cleanup physical DELETE of temporary user id 15 returned HTTP 500 because historical audit rows retain a required user foreign key. The exact account was subsequently disabled through the authenticated administration API and verified unable to remain enabled; audit history was preserved.
 - Initial style-fix candidate bind to localhost port 18090 failed because the port was already occupied. The failed container was removed, candidate port 18086 was used, and all candidate/formal checks passed.
 - Initial six-center detail smoke used aggregate counts as record IDs and correctly returned not-found states. The actual first persisted IDs were queried and all 12 list/detail checks then passed.
@@ -341,14 +407,21 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Moodle briefly became unavailable while correcting its health check because an overly broad replacement also changed the MariaDB probe. The MariaDB-native probe was restored, both containers were recreated against persistent volumes, and database/Moodle health plus gateway HTTP checks passed with course data preserved.
 
 # CURRENT ERRORS
+- No current candidate migration error. The missing-setting failure was resolved by injecting migration-only `REDIS_URL` and `JWT_SECRET`; production was never touched.
+- Candidate acceptance runner attempt 1: target host has no `python3` command. Use the API image's bundled Python or a preinstalled host interpreter; this is an execution-environment issue only and does not affect candidate API health.
+- Candidate acceptance runner attempt 2: API container is correctly read-only, so `docker cp` cannot place a test file inside it. Use a disposable test-runner container sharing the network instead; do not weaken the candidate container.
+- Candidate acceptance runner attempt 3: image entrypoint ran Alembic before the test script, producing missing-settings errors. Retry with `--entrypoint python`; no candidate or production data changed.
+- No current deployment/runtime error for the main-image fix. A signed-in visual browser interaction remains to confirm the live edit-mode hero-image transition and reload persistence end to end.
+- Upload and asset UI is not ready for business acceptance: draft publication is missing from inline document management, image-link persistence is ambiguous, create dialogs lack consistent upload controls, and server-side image content validation is insufficient.
 - No application-blocking code, migration, import, runtime, or API errors remain.
-- MATERIAL-IMPORT-BLOCKER: Source workbook and `核心产品标准化材料-260818同步.rar` are uploaded under `/opt/haizhi-product-hub` (confirmed in the server file manager). The first backup command stopped before any mutation because the guessed PostgreSQL role `haizhi` does not exist; the terminal websocket then disconnected. No production document deletion or catalog mutation has been attempted.
+- The earlier guessed PostgreSQL role `haizhi` was incorrect; production inspection established the correct role/database as `haizhi_app` / `haizhi_hub`, and the backup now passes. This is resolved and must not be treated as a current blocker.
 - Physical DELETE of an account that owns retained audit rows returns HTTP 500 because the audit foreign key is intentionally non-nullable. The temporary acceptance account is disabled and verified; operational cleanup must preserve audit history through disable rather than physical deletion.
 - AD/LDAP was explicitly excluded from reconfiguration and credential diagnosis in this UI-only phase; existing LDAP code was not modified and is not a Phase 2 UI acceptance blocker.
 - Public port 443 now serves Dify over plain HTTP; a domain and trusted certificate have not been supplied.
-- Material import is paused at preflight: determine the actual PostgreSQL role/database from the server container environment, then rerun backup and continue with the staged dry-run.
+- No unresolved material-import errors remain. Official catalog cleanup and import completed through reversible archival; no unrelated production record was physically deleted.
 
 # FIXES APPLIED
+- Changed product main-image upload from draft-only behavior to immediate product binding, record reload and visible hero-image refresh; added failure cleanup and same-id `mainImage` watcher coverage.
 - Corrected Dify's stale Celery broker password to the URL-encoded active Redis password, refreshed the affected services and Nginx upstream resolution, and added governed real-dataset retrieval plus deterministic document-content fallback to AI Q&A.
 - Sanitized LDAP/AD control bytes before database persistence or HTTP response, preventing PostgreSQL `NUL` failures and preserving structured JSON errors; added frontend non-JSON fallback and rejected Base-DN-shaped Login Domain values.
 - Replaced environment-only AD configuration with administrator-managed LDAP/LDAPS settings, explicit enable/test/save/sync actions, encrypted password-at-rest handling, and blank-password update preservation; secrets are never returned by the API.
@@ -377,13 +450,14 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Formal: FastAPI/Vue/PostgreSQL/Redis/MinIO through the public business gateway on port 80; Dify 1.16.1 on public port 443 and retained direct port 18081; Moodle on port 18082 and business-gateway route `/moodle/`.
 
 # CONTAINERS
+- `haizhi-hub-api`: running formal `haizhi-hub-api:6.1.7-main-image-fix` on host port 18080; direct/gateway health, restart stability, static marker and live image upload/bind/restore/cleanup regression pass.
+- `haizhi-hub-api-v616-main-image-rollback-20260901-175004`: stopped immediate rollback point on immutable `haizhi-hub-api:6.1.6-official-materials`.
 - `haizhi-phase2-style-candidate`: stopped after final style verification; retained only as a non-running diagnostic artifact.
 - `haizhi-phase2-pg`: running isolated candidate PostgreSQL restored from the verified production snapshot; no production database writes.
 - `haizhi-phase2-api`: running candidate `haizhi-hub-api:6.0.0-phase2-runtime` at `127.0.0.1:18089`; health and complete Phase 2 candidate API acceptance pass.
 - `haizhi-hub-postgres`: running.
 - `haizhi-hub-redis`: running, password protected.
 - `haizhi-hub-minio`: running with persistent named volume.
-- `haizhi-hub-api`: running formal `haizhi-hub-api:6.1.0-ui-polish` on host port 18080 as UID/GID `10001:10001`, read-only root filesystem, capability drop `ALL`, `no-new-privileges`, and hardened `/tmp`; direct and gateway health checks pass.
 - `haizhi-hub-api-v605-uirollback-20260825`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.5-phase2-style-fix`.
 - `haizhi-hub-api-v604-stylerollback-20260824`: stopped immediate rollback point on immutable `haizhi-hub-api:6.0.4-phase2-download-fix`.
 - `haizhi-dify-port443`: running as UID/GID `101:101` with read-only root, capability drop `ALL`, `no-new-privileges`, hardened `/tmp`, and restart policy `unless-stopped`; proxies public port 443 to the existing Dify Nginx service.
@@ -414,8 +488,8 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Isolated candidate schema is at Alembic revision `c3d4e5f60718`; upgrade/downgrade/re-upgrade passed after the Phase 2 role-binding change.
 
 # APPLICATION VERSION
-- Formal backend/frontend deployed: immutable `haizhi-hub-api:6.1.0-ui-polish` (frontend bundle `index-D4lSoA8j.js`, stylesheet `index-DlnbK5He.css`).
-- Formal and accepted candidate share image id `sha256:45dffe7e0d2b4c23d01cf91a13eaa09928bd5d815d15952097818847cdac9bac`.
+- Formal backend/frontend deployed: immutable `haizhi-hub-api:6.1.8-parameter-persistence`; frontend entry remains `index-D8fiEXLK.js`, stylesheet `index-C0w9Bjj3.css`.
+- Source branch/commit for the official-material changes: `codex/phase2-ui-final-polish` at `dde4761140b75b27bb722e606e3729cfbab55e55`; the working tree contains the recorded official-material source and artifact changes and has not been discarded.
 - Candidate runtime: `haizhi-hub-api:6.0.0-phase2-excel-ui` on localhost port 18089; exact candidate frontend entry is `index-Da_32jig.js` and includes real Dify synchronization/retrieval, derived document previews, and visual Excel mapping/export.
 - Server project root `/opt/haizhi-product-hub` is not a Git worktree, so it has no branch or commit identifier; deployment is artifact/image based.
 - Local project is a Git worktree on `codex/phase2-ui-final-polish`.
@@ -455,10 +529,15 @@ WAITING_FOR_BUSINESS_ACCEPTANCE_FEEDBACK
 - Deterministic 32-dimensional embedding, chunk persistence, and semantic retrieval endpoints deployed and verified.
 
 # EXTERNAL BLOCKERS
+- ACTIVE 2026-09-20: JumpServer authenticated SFTP and Web CLI pages render, but their Upload/CONNECT controls do not respond to automated semantic, coordinate, or keyboard activation. The exact fix4 archive is not present in the server staging directory, so candidate build/deployment cannot safely proceed until the archive is transferred or the JumpServer controls recover. Required local artifact: `artifacts/haizhi-product-platform-6.2.0-source-fix4.tar.gz`, 8,763,475 bytes, SHA-256 `82c94432306d625d9db614e6cb33338650b5df761066dda3cefe764f57c91fe1`.
+- RESOLVED 2026-09-01: JumpServer Web CLI access was restored and the staged fix was built, accepted, promoted and restart-tested. No current server-access blocker remains.
 - None for Phase 2 UI & Interaction acceptance. Production trusted HTTPS remains a known infrastructure limitation because no domain/certificate has been provided; current entry is plain HTTP on port 443.
-- The requested collateral import/cleanup is ready to resume from the server-side files. Before mutation, create a timestamped PostgreSQL/MinIO backup, extract the archive to an import staging directory, run a dry-run inventory, then apply only exact material-backed upserts and archive unrelated records rather than deleting without an auditable match.
+- None for the requested material import. The workbook and RAR are available on the server and the required rollback backup is complete.
 
 # DO NOT REPEAT
+- Do not repeat the official-material import, active-record archival, image upload, document upload, tender-parameter import, or final regression unless the user supplies changed source materials or explicitly requests a re-import. Current production marker is `haizhi-hub-api:6.1.6-official-materials` and final regression passed on 2026-08-26.
+- Do not repeat server-side extraction or production inventory export unless the source RAR or production catalog changes. Current staging: `/opt/haizhi-product-hub/import/materials-20260826-103833`.
+- Do not repeat the material-import preflight database/MinIO/source backup unless production data changes before import. Verified backup: `/data/haizhi-product-hub/backups/20260826-102616-official-material-import`.
 - Do not regenerate or recompress the final package unless a delivered report/evidence file changes. Verified ZIP SHA-256 is `b63603cb04854d2bb4b1d8a0da0b576e2f2e5328c433798b5fa61b2df6b41291`.
 - Do not repeat the 44-route responsive regression, 12-route six-center smoke, or scoped-CSS diagnosis unless frontend assets change; formal marker is `PHASE2_STYLE_FIX_FORMAL_GATEWAY_PASS`.
 - Do not repeat the legacy port-80 backup or Dify sidecar cutover unless port routing changes; backup is `/data/haizhi-product-hub/backups/20260824-phase2-port80-cutover` and marker is `PHASE2_DIFY_PORT80_FORMAL_PASS`.
@@ -514,3 +593,32 @@ PASS: RBAC, price audit, source/asset secret scan, authentication controls, secu
 - RESPONSIVE GATE: PASS.
 - REGRESSION GATE: PASS.
 - FINAL STATUS: `PHASE 2 UI & INTERACTION ACCEPTED`.
+
+## 2026-09-21 图片展示修复跟进
+
+- 用户反馈正式线上产品卡片主图仍被裁切；仅针对该问题处理，未操作 Dify、端口或数据库数据。
+- 通过 JumpServer Web CLI 在正式 API 容器上完成可回滚切换：`haizhi-hub-api:6.2.0-imagefix4`。
+- 发布目录：`/opt/haizhi-product-hub/releases/6.2.0-20260921-fix5-full`。
+- 修复内容：产品卡片图片区域高度由 154px 调整为 210px；图片元素改为绝对定位铺满容器，并强制 `object-fit: contain`、`object-position: center`，避免图片固有高度撑大后被父容器裁切。
+- 正式旧容器回滚点保留：`haizhi-hub-api-imagefix3-rollback-20260921`。
+- 已验证：`/api/health` 返回 `status=ok`；容器 `ReadonlyRootfs=true`、用户 `10001:10001`；正式数据库未清空、未重新导入。
+- 已使用 `admin / admin2026!` 登录正式业务平台并实测 `/products`：主图完整显示，浏览器 DOM 中 `object-fit=contain` 且图片不再超出 210px 容器；截图验证通过。
+
+## 2026-09-21 品牌与背景 UI 修改
+
+- 本地已完成品牌文案改为“海莱云智产品中心”，移除登录页“六大知识中心”标题。
+- 登录后导航维持并明确为：首页、智能配单、项目配单、资料中心、产品中心、软件中心、算法中心、模型能力中心、场景中心、方案中心、BOM规则、Excel模板、系统管理。
+- 已使用用户提供的海港图片作为登录页及内容区域背景，并完成本地 `npm run build`。
+- 本地发布包：[haizhi-ui-brand-bg-20260921.tar.gz](C:/Users/kn319/Documents/New%20project/haizhi-product-hub/haizhi-ui-brand-bg-20260921.tar.gz)，SHA-256 `FB1FC60ABEFBA4CF52ED2924359D3B6CEDC4F5ED84DC7CC501439F878235AA3F`。
+- 通过堡垒机文件管理已上传发布包和压缩背景图；正式服务切换尚未执行，需在服务器终端重新连接后部署并保留回滚容器。
+## 2026-09-21 品牌与背景正式上线
+
+- 正式镜像：`haizhi-hub-api:6.2.0-brand-bg2`
+- 回滚容器：`haizhi-hub-api-imagefix4-rollback-brand2-20260921`
+- 发布包：`haizhi-ui-brand-bg-20260921.tar.gz`
+- 发布包 SHA-256：`fb1fc60abefba4cf52ed2924359d3b6cedc4f5ed84dc7cc501439f878235aa3f`
+- 背景图：`hilai-harbor-bg.jpg`
+- 健康检查：`/api/health` 返回 `{"status":"ok","version":"1.0.0","runtime":"fastapi-postgresql"}`
+- 安全参数复核：非 root `10001:10001`、只读根目录、`CapDrop=ALL`、`no-new-privileges`、`unless-stopped`
+- 正式数据未迁移、未清空、未覆盖；产品列表刷新后仍为 4 条
+- 浏览器验证：品牌显示“海莱云智产品中心”，导航顺序符合要求，产品列表和价格数据正常，背景资源已随正式静态包加载

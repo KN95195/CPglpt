@@ -58,6 +58,8 @@ body, mime = multipart({'center_type': 'products', 'center_id': str(product_id)}
 _, uploaded_raw, _ = request('POST', '/api/documents', admin_token, body, mime, (201,))
 document = json.loads(uploaded_raw)
 try:
+    # Uploads are drafts. Publish explicitly before checking reader visibility.
+    request('POST', f"/api/documents/{document['id']}/publish", admin_token)
     _, admin_list_raw, _ = request('GET', f'/api/documents?center_type=products&center_id={product_id}', admin_token)
     _, reader_list_raw, _ = request('GET', f'/api/documents?center_type=products&center_id={product_id}', reader_token)
     admin_item = next(item for item in json.loads(admin_list_raw) if item['id'] == document['id'])

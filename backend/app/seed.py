@@ -61,8 +61,15 @@ def ensure_v3_seed(db):
  solutions=list(db.scalars(select(Solution).order_by(Solution.id)))
  if not all([products,software,algorithms,capabilities,scenes,solutions]):return
 
+ official_products={'岸海船舶检测终端','海智AI分析终端','蓬莱智算一体机'}
+ official_software={'智慧海洋综合管控平台','海域智联综合管控平台','蓬莱智算算法编排平台','桥梁限高防撞系统','岸线缉私管控应用平台'}
+ official_algorithms={'船舶检测跟踪算法','船舶身份核验算法','船舶测距测高算法','动火识别算法'}
+ official_capabilities={'基于视觉分析的涉海目标智能感知模型','基于多源数据的船舶航迹融合及异常分析模型'}
+ official_scenes={'船舶通航管控','三无船舶管理','港口安全管理','桥梁限高防撞','海陆缉私管控'}
+
  product_types=['HARDWARE','HARDWARE','SOFTWARE_PRODUCT','SYSTEM_PRODUCT','HARDWARE','HARDWARE','HARDWARE','HARDWARE','SOFTWARE_PRODUCT','SOFTWARE_PRODUCT','SOFTWARE_PRODUCT','SOFTWARE_PRODUCT','HARDWARE','ACCESSORY','SOFTWARE_PRODUCT']
  for index,product in enumerate(products):
+  if product.name in official_products:continue
   product.product_type=product_types[index%len(product_types)];product.product_code=product.product_code or product.model_code;product.product_series=product.product_series or '海智水域智能';product.current_version=product.current_version or 'V1.0';product.description=product.description or product.summary;product.main_image=product.main_image or ('/assets/product-radar.png' if index%2==0 else '/assets/product-terminal.png');product.tags_json=json.dumps(['水域安全','智能监管'],ensure_ascii=False);product.boundaries_json=json.dumps(['具体现场适配范围以项目勘察结果为准'],ensure_ascii=False)
   if not product.parameters:
    defaults=[('产品型号',product.model_code,'','基础信息',True),('当前版本',product.current_version,'','基础信息',False),('关键性能参数','待产品资料确认','','技术参数',True)]
@@ -73,24 +80,28 @@ def ensure_v3_seed(db):
 
  software_profiles=[('HZ-SW-OC','PLATFORM','PRIVATE',['Linux','国产操作系统']),('HZ-SW-AI','PLATFORM','HYBRID',['Linux']),('HZ-SW-FUSION','SERVICE','PRIVATE',['Linux','Windows'])]
  for item,profile in zip(software,software_profiles):
+  if item.name in official_software:continue
   item.code,item.software_type,item.deployment_mode,systems=profile;item.vendor='海智科技';item.supported_os_json=json.dumps(systems,ensure_ascii=False);item.database_json=json.dumps(['PostgreSQL'],ensure_ascii=False);item.protocols_json=json.dumps(['HTTPS','REST API'],ensure_ascii=False);item.detail_description=item.detail_description or item.description;item.boundaries_json=json.dumps(['具体接口与部署规格以项目技术协议为准'],ensure_ascii=False)
   if not item.modules:
    item.modules=[SoftwareModule(name='综合态势',description='汇聚多源感知数据并形成统一态势',sort_order=0,features=[SoftwareFeature(name='态势展示',description='统一展示目标、设备和事件',sort_order=0)]),SoftwareModule(name='告警处置',description='承载告警确认、分派与闭环',sort_order=1,features=[SoftwareFeature(name='事件闭环',description='记录告警处理全过程',sort_order=0)])]
   if not item.versions:item.versions=[SoftwareVersion(version=item.version,summary='当前正式版本')]
 
  for index,item in enumerate(algorithms):
+  if item.name in official_algorithms:continue
   item.code=f'HZ-ALG-{index+1:03d}';item.principle=item.principle or '对输入目标数据进行特征提取、规则分析与结果输出。';item.input_summary='AIS、雷达、视频或结构化目标数据';item.output_summary='风险事件、目标属性与置信度结果';item.metrics_json=json.dumps({'准确率':'待测试报告确认','处理性能':'待测试报告确认'},ensure_ascii=False);item.boundaries_json=json.dumps(['需满足输入数据质量要求','极端天气下需人工复核'],ensure_ascii=False)
   if not item.parameters:item.parameters=[AlgorithmParameter(name='时间窗口',value='按场景配置',group_name='运行参数',sort_order=0),AlgorithmParameter(name='告警阈值',value='按项目规则配置',group_name='规则参数',sort_order=1)]
   if not item.metrics:item.metrics=[AlgorithmMetric(name='准确率',value='待测试报告确认',group_name='性能指标',condition='待确认',source='待产品测试报告确认',highlight=True,sort_order=0)]
 
  function_types=['融合','检测','预警','识别','预警','联动','检测','跟踪','预测','分析','识别','联动','分析','通信','融合']
  for index,item in enumerate(capabilities):
+  if item.name in official_capabilities:continue
   item.code=f'HZ-MC-{index+1:03d}';item.version='V2.'+str(index%4+1);item.function_type=function_types[index%len(function_types)];item.model_type=['FUSION','DETECTION','TIME_SERIES','OCR','DETECTION'][index%5];item.task_type=item.function_type;item.metrics_json=json.dumps({'准确率':'待测试报告确认','响应延迟':'待测试报告确认'},ensure_ascii=False);item.input_requirements_json=json.dumps({'输入类型':'视频或结构化数据','数据质量':'满足项目接入规范'},ensure_ascii=False);item.deployment_requirements_json=json.dumps({'运行环境':'Linux','推荐硬件':'待项目并发量评估后确认'},ensure_ascii=False);item.use_conditions_json=json.dumps(['需完成现场数据标定与接入验证'],ensure_ascii=False);item.boundaries_json=json.dumps(['遮挡严重或输入质量不足时需人工复核'],ensure_ascii=False)
   if not item.metrics:item.metrics=[ModelMetric(name='准确率',value='待测试报告确认',group_name='性能指标',condition='待确认',source='待产品测试报告确认',dataset='待确认',highlight=True,sort_order=0)]
   if not item.inputs:item.inputs=[ModelInputDefinition(name='业务数据',data_type='JSON/Stream',required=True,description='符合项目接入规范的视频或结构化数据',sort_order=0)]
   if not item.outputs:item.outputs=[ModelOutputDefinition(name='分析结果',data_type='JSON',description='目标属性、事件类型与置信信息',sort_order=0)]
 
  for index,item in enumerate(scenes):
+  if item.name in official_scenes:continue
   item.category=['水域安全','航道监管','港口监管','综合监管','海上设施'][index%5];item.tags_json=json.dumps([item.category,'多源感知'],ensure_ascii=False);item.conditions_json=json.dumps(['现场具备基础感知与网络条件','完成业务规则确认'],ensure_ascii=False);item.goals_json=json.dumps(['提升多源感知覆盖','缩短风险事件响应时间'],ensure_ascii=False);item.process_json=json.dumps(['采集多源数据','模型分析研判','联动告警处置','形成事件闭环'],ensure_ascii=False);item.core_capability_summary='融合感知、目标识别、风险预警与联动处置';item.cover_image=item.cover_image or ('/assets/bridge-ship-waterway.jpg' if index==0 else '/assets/scene-waterway.png')
   if not item.pains:item.pains=[ScenePain(title='感知数据分散',description='多类设备数据缺少统一汇聚与研判',sort_order=0),ScenePain(title='事件响应链路长',description='告警发现、确认和处置之间缺少闭环',sort_order=1)]
   if not item.goals:item.goals=[SceneGoal(title='形成统一态势',description='建立多源数据一体化展示与研判能力',sort_order=0),SceneGoal(title='建立处置闭环',description='贯通告警、分派、处置和复盘流程',sort_order=1)]

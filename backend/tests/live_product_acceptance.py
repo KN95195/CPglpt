@@ -62,13 +62,30 @@ def main() -> int:
                 "name": name,
                 "model_code": model,
                 "category_id": 1,
-                "summary": "正式验收临时数据",
+                "summary": "",
                 "status": "ON_SALE",
             },
         )
         assert status == 201, (status, created)
         created_id = created["id"]
+        assert created.get("productCode") == model, created
+        assert created.get("summary") == "", created
         checks.append("admin_create")
+
+        status, duplicate = request(
+            "/api/admin/products",
+            token=admin,
+            method="POST",
+            body={
+                "name": f"{name}-重复型号",
+                "model_code": model,
+                "category_id": 1,
+                "summary": "重复型号应被拒绝",
+                "status": "ON_SALE",
+            },
+        )
+        assert status == 409, (status, duplicate)
+        checks.append("duplicate_model_rejected")
 
         query = urllib.parse.quote(model)
         status, found = request(f"/api/products?q={query}", token=admin)
@@ -77,6 +94,7 @@ def main() -> int:
 
         status, detail = request(f"/api/products/{created_id}", token=admin)
         assert status == 200 and detail["modelCode"] == model
+        assert detail["productCode"] == model
         assert isinstance(detail.get("capabilities"), list)
         checks.append("detail_relationships")
 

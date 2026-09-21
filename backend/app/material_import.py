@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from sqlalchemy import select
 from .database import SessionLocal
-from .models import Algorithm,Capability,KnowledgeCommercialProfile,ModelMetric,Product,ProductCategory,ProductVariant,Scene,Software
+from .models import Algorithm,Capability,KnowledgeCommercialProfile,ModelMetric,Product,ProductCategory,ProductVariant,ProductVariantOffer,Scene,Software
 
 SOURCE_PATH=Path(__file__).with_name('data')/'official_material_2026.json'
 
@@ -22,17 +22,27 @@ def run():
         for data in source['products']:
             category=db.scalar(select(ProductCategory).where(ProductCategory.name==data['category']))
             if not category:category=ProductCategory(name=data['category'],description='正式配单材料分类');db.add(category);db.flush()
-            item=db.scalar(select(Product).where(Product.name==data['name']))
             primary=data['variants'][0]['model']
+            item=db.scalar(select(Product).where((Product.name==data['name'])|(Product.model_code==primary)|(Product.product_code==primary)))
             if not item:item=Product(name=data['name'],product_code=primary,product_series=data['series'],model_code=primary,current_version='2026',product_type='HARDWARE',category_id=category.id,summary=data['summary'],description=data['summary'],status='ON_SALE',source=source['source'],owner='产品中心');db.add(item);db.flush()
-            item.product_series=data['series'];item.summary=data['summary'];item.description=data['summary'];item.source=source['source']
+            item.name=data['name'];item.product_code=primary;item.model_code=primary;item.product_series=data['series'];item.current_version='2026';item.product_type='HARDWARE';item.category_id=category.id;item.summary=data['summary'];item.description=data['summary'];item.status='ON_SALE';item.data_status='CONFIRMED';item.source=source['source']
             variants={variant.model_code:variant for variant in item.variants}
+            source_models={row['model'] for row in data['variants']}
+            for model_code,variant in variants.items():
+                if model_code not in source_models:
+                    variant.is_primary=False;variant.agent_price=None;variant.sale_price=None;variant.commercial_status='ARCHIVED';variant.sales_notes='未在当前正式材料中出现，已归档'
             for index,row in enumerate(data['variants']):
                 variant=variants.get(row['model'])
                 if not variant:
                     variant=ProductVariant(product_id=item.id,model_code=row['model'])
                     db.add(variant)
-                variant.material_code=row['material'];variant.unit=row['unit'];variant.is_primary=index==0;variant.is_agent_product=True;variant.agent_price=row['agent'];variant.sale_price=row['sale'];variant.warranty_months=12;variant.extended_warranty_rule='默认质保12个月，延保按项目商务政策执行';variant.applicable_scenes_json=json.dumps(data['scenes'],ensure_ascii=False);variant.sales_notes='价格以正式报价单为准';variant.commercial_status=row['status'];variant.specifications_json=json.dumps(row['spec'],ensure_ascii=False);variant.sort_order=index
+                variant.material_code=row['material'];variant.unit=row['unit'];variant.is_primary=index==0;variant.is_agent_product=True;variant.agent_price=row['agent'];variant.sale_price=row['sale'];variant.warranty_months=24;variant.extended_warranty_rule='默认质保24个月，延保按项目商务政策执行';variant.applicable_scenes_json=json.dumps(data['scenes'],ensure_ascii=False);variant.sales_notes='价格以正式报价单为准';variant.commercial_status=row['status'];variant.specifications_json=json.dumps(row['spec'],ensure_ascii=False);variant.sort_order=index
+                offers={(offer.price_type,offer.channel,offer.warranty_months):offer for offer in variant.offers}
+                for price_type,channel,amount,is_default in [('AGENT','AGENT',row.get('agent'),False),('SALES','DIRECT',row.get('sale'),index==0)]:
+                    if amount is None:continue
+                    offer=offers.get((price_type,channel,24))
+                    if not offer:offer=ProductVariantOffer(price_type=price_type,channel=channel,warranty_months=24,amount=amount);variant.offers.append(offer)
+                    offer.amount=amount;offer.currency='CNY';offer.tax_included=True;offer.tax_rate=13;offer.is_default=is_default;offer.status='ACTIVE';offer.notes='正式材料价格，两年质保'
                 counts['variants']+=1
             counts['products']+=1
         for data in source['software']:

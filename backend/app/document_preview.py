@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from docx import Document
 from openpyxl import load_workbook
 from pptx import Presentation
+import xlrd
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
@@ -29,7 +30,7 @@ def preview_capable(file_name: str, mime_type: str) -> bool:
     mime = (mime_type or '').lower()
     return bool(
         mime == 'application/pdf' or mime.startswith('image/') or mime.startswith('text/')
-        or suffix in {'.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.txt', '.docx', '.pptx', '.xlsx', '.xlsm'}
+        or suffix in {'.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.txt', '.docx', '.pptx', '.xls', '.xlsx', '.xlsm'}
     )
 
 
@@ -94,6 +95,22 @@ def xlsx_preview_html(data: bytes) -> bytes:
     return content.encode('utf-8')
 
 
+def xls_preview_html(data: bytes) -> bytes:
+    workbook = xlrd.open_workbook(file_contents=data)
+    sections = []
+    for sheet in workbook.sheets():
+        rows = []
+        for row_index in range(min(sheet.nrows, 300)):
+            cells = ''.join(
+                f'<td>{html.escape(str(sheet.cell_value(row_index, column_index)))}</td>'
+                for column_index in range(min(sheet.ncols, 60))
+            )
+            rows.append(f'<tr>{cells}</tr>')
+        sections.append(f'<section><h2>{html.escape(sheet.name)}</h2><div class="sheet"><table>{"".join(rows)}</table></div></section>')
+    content = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>Excel预览</title><style>body{margin:20px;font:14px Arial,"Microsoft YaHei",sans-serif;color:#1f2937}h2{font-size:18px}.sheet{overflow:auto;border:1px solid #d8e0ea}table{border-collapse:collapse;white-space:nowrap}td{min-width:80px;padding:6px 8px;border:1px solid #d8e0ea;background:#fff}tr:first-child td{background:#eef5ff;font-weight:700}</style></head><body>'+''.join(sections)+'</body></html>'
+    return content.encode('utf-8')
+
+
 def build_preview(file_name: str, mime_type: str, data: bytes) -> PreviewResult | None:
     suffix = os.path.splitext(file_name or '')[1].lower()
     mime = (mime_type or '').lower()
@@ -103,6 +120,8 @@ def build_preview(file_name: str, mime_type: str, data: bytes) -> PreviewResult 
         return PreviewResult('PDF', _docx_pdf(data), 'application/pdf', '.pdf')
     if suffix == '.pptx':
         return PreviewResult('PDF', _pptx_pdf(data), 'application/pdf', '.pdf')
+    if suffix == '.xls':
+        return PreviewResult('HTML', xls_preview_html(data), 'text/html; charset=utf-8', '.html')
     if suffix in {'.xlsx', '.xlsm'}:
         return PreviewResult('HTML', xlsx_preview_html(data), 'text/html; charset=utf-8', '.html')
     raise PreviewUnsupported('当前文件格式暂不支持在线预览，请下载原文件查看')
