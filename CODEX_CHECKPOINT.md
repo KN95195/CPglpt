@@ -11,16 +11,16 @@ Official source-backed catalog cleanup, product/tender parameter import, documen
 CANDIDATE-RUNTIME-20260919: Started isolated `haizhi-620-api` on `127.0.0.1:18091` using image `6.2.0-product-platform` and the cloned database. Health returned OK; Alembic is `d4e5f60718a1`; runtime uses UID/GID `10001:10001`, read-only root, `no-new-privileges`, capability drop `ALL`, and hardened `/tmp`.
 
 # CURRENT STEP
-PRODUCTION_FIX5_R2_DEPLOYED_POST_SWITCH_REGRESSION
+PRODUCTION_FIX12_DEPLOYED_SOFTWARE_SOLUTION_CREATE_VERIFIED
 
 # DATA PRESERVATION NOTE
-- 用户已录入的正式平台信息保持不变；本轮整改包尚未上传、构建、迁移或切换到正式服务。
-- 正式数据库当前未执行本轮 `d4e5f60718a1` 迁移，现有正式 schema 和数据保持原样。
+- 用户已录入的正式平台信息保持不变；fix12 仅更换前端请求路由和静态资源指纹。
+- 本轮未执行数据库迁移、清空、覆盖或重新导入；正式 schema 和原有业务数据保持原样。
 - 已创建发布前数据库备份：`/data/haizhi-product-hub/backups/20260918-product-platform-62/predeploy.sql`。
-- 只有在发布包成功上传、候选环境完整回归通过、迁移前再次核对备份后，才允许进行正式切换；失败时回滚到现有 `haizhi-hub-api:6.1.8-parameter-persistence`。
+- fix10 与 fix11 正式容器均作为已停止的即时回滚点；fix12 异常时优先回滚 fix11。
 
 # NEXT EXACT STEP
-POST_SWITCH_BROWSER_AND_AUTHENTICATED_REGRESSION
+CONTINUE_SCOPED_SIX_CENTER_CRUD_REGRESSION_FROM_FIX12_BASELINE
 
 # CANDIDATE FIX5-R2 STATUS (2026-09-21)
 - Applied overlay2 to the isolated fix5 release; relation metadata now accepts `version`, and document acceptance explicitly publishes uploads before visibility/download checks.
@@ -38,6 +38,7 @@ POST_SWITCH_BROWSER_AND_AUTHENTICATED_REGRESSION
 - Post-switch health returned `status: ok`; all six unauthenticated list endpoints returned expected `401` responses; gateway remained up.
 
 # COMPLETED STEPS
+- PRODUCT-PLATFORM-620-FIX-021: Reproduced the production software-create failure (`Extra inputs are not permitted`) and traced it to a frontend regression that sent non-product create/update/delete requests to the strict public detail routes instead of `/api/admin/catalog/{kind}`. Restored the previously accepted admin-catalog CRUD routing while retaining entity-specific payloads. The production Vue build passed. Deployed immutable image `haizhi-hub-api:6.2.0-product-platform-fix12`; fix10 and fix11 production containers remain stopped rollback points. Fix12 uses a new asset fingerprint (`index-fix12-CbaSGCcR.js`) so browsers cannot reuse the broken cached bundle. Local and gateway health passed; runtime remains UID/GID 10001:10001, read-only root, no-new-privileges and CapDrop ALL. Formal database/schema were not migrated, cleared or reimported. Browser acceptance created `TEST-软件新增-20260922` (software count 5 -> 6) and `TEST-方案新增-20260922` (solution count 6 -> 7); both remained visible after full page reload. Per the user's instruction, these test records were retained for manual cleanup.
 - PRODUCT-PLATFORM-620-FIX-011: User uploaded fix4 under the JumpServer `fabu` folder; server-side `find` located the exact archive at `/tmp/haizhi-product-platform-6.2.0-source-fix4.tar.gz`. Size 8,763,475 and SHA-256 `82c94432306d625d9db614e6cb33338650b5df761066dda3cefe764f57c91fe1`; archive path safety passed. Extracted to `/opt/haizhi-product-hub/releases/6.2.0-20260921-fix4`. Frontend-inclusive Docker build exposed an nginx-only image, so the immutable candidate was rebuilt safely from the previously verified fix3 API image plus fix4 `app/main.py`; image ID `sha256:e56a406ba0114aa5a04ba1d50f6e82f8a9554ca19381502807df6f9bf63e85d8`. Candidate `haizhi-620-api` restarted on localhost 18091 with schema `d4e5f60718a1`, UID/GID 10001:10001, read-only root, no-new-privileges, CapDrop ALL, hardened tmpfs. `/api/health` returned HTTP 200; formal services and database remain untouched.
 - PRODUCT-PLATFORM-620-FIX-012: Candidate-only acceptance preparation completed. The isolated candidate users `admin` and `sales` were assigned a temporary test password inside the cloned candidate database only; no formal database was modified. Acceptance scripts are present under the extracted fix4 release. Full candidate suites remain the next required gate before any formal migration or service cutover.
 - PRODUCT-PLATFORM-620-FIX-013: Fixed two product-detail persistence edge cases in the source: nullable `last_verified_at` no longer crashes product detail reads, and product updates return the permission-filtered detail DTO with the current user so PRICE_VIEW managers receive the price payload after saving. `compileall` and `git diff --check` passed; formal runtime remains unchanged.
